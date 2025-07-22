@@ -27,6 +27,7 @@ dependencies {
 
 	// Spring Security Starter (인증/인가 기능)
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+
 	// Spring Web (Spring MVC 기반 REST API 등 웹 애플리케이션 기능 제공)
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 
@@ -34,6 +35,7 @@ dependencies {
 	runtimeOnly 'com.oracle.database.jdbc:ojdbc11'
 	// JPA
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.hibernate.validator:hibernate-validator'
 
 	// Websocket
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'

@@ -1,10 +1,10 @@
 package com.project.korex.exchangeRate.dto;
 
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-@Getter
+@Data
 @NoArgsConstructor
 @ToString
 public class ExchangeRateDto {
