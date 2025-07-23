@@ -23,9 +23,8 @@ public class ExchangeRateSaveController {
     @PostMapping("/rates")
     public ResponseEntity<String> saveExchangeRates(
 //            @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @RequestParam("date") @DateTimeFormat(pattern = "yyyyMMdd") LocalDate date,
-            @RequestBody List<ExchangeRate> rates) {
-        exchangeRateSaveService.saveExchangeRatesByDate(date, rates);
+            @RequestParam("date") @DateTimeFormat(pattern = "yyyyMMdd") String date) {
+        exchangeRateSaveService.saveExchangeRatesByDate(date);
         return ResponseEntity.ok("환율 데이터가 저장되었습니다.");
     }
 
