@@ -1,11 +1,18 @@
 package com.project.korex.exchangeRate.controller;
 
 import com.project.korex.exchangeRate.dto.ExchangeRateDto;
+import com.project.korex.exchangeRate.service.ExchangeRateCrawlerService;
 import com.project.korex.exchangeRate.service.ExchangeRateService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/exchange")
@@ -13,11 +20,26 @@ import java.util.List;
 public class ExchangeRateController {
 
     private final ExchangeRateService exchangeRateService;
+    private final ExchangeRateCrawlerService exchangeRateCrawlerService;
 
     @GetMapping("/rates")
-    public List<ExchangeRateDto> getExchangeRates(
+    public ResponseEntity<List<ExchangeRateDto>> getExchangeRates(
             @RequestParam(defaultValue = "#{T(java.time.LocalDate).now().format(T(java.time.format.DateTimeFormatter).ofPattern('yyyyMMdd'))}") String searchdate
     ) {
-        return exchangeRateService.getExchangeDataAsDtoList(searchdate);
+        return ResponseEntity.ok(exchangeRateService.getExchangeDataAsDtoList(searchdate));
     }
+
+    // @GetMapping 메서드에 ResponseEntity를 붙이면 HTTP 상태 코드, 헤더 등을 더 명확히 제어
+    @GetMapping("/real-time")
+    public ResponseEntity<List<Map<String, String>>> getExchangeRates() {
+        try {
+            List<Map<String, String>> exchangeRates = exchangeRateCrawlerService.crawlExchangeRates();
+            return ResponseEntity.ok(exchangeRates);  // HTTP 200 OK
+        } catch (IOException e) {
+            // 에러 로그
+            // log.error("환율 데이터 크롤링 실패", e);
+            return ResponseEntity.internalServerError().build();  // HTTP 500
+        }
+    }
+
 }

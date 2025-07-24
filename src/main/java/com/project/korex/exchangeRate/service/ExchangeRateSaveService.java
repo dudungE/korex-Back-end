@@ -29,13 +29,11 @@ public class ExchangeRateSaveService {
     @Transactional
     public void saveExchangeRatesByDate(String baseDate) {
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
-
         // String → LocalDate 변환
-//        LocalDate parsedDate = LocalDate.parse(baseDate);  // yyyy-MM-dd 포맷 가정
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
         LocalDate parsedDate = LocalDate.parse(baseDate, formatter);
 
-        // 기존 데이터 삭제 (optional)
+        // 기존 데이터 삭제 (optional) -> 예외처리하기
         exchangeRateRepository.deleteByBaseDate(parsedDate);
 
         // DTO 리스트 가져오기 (외부 API, 혹은 서비스 호출)
@@ -61,7 +59,9 @@ public class ExchangeRateSaveService {
 
 
     private ExchangeRate convertDtoToEntity(ExchangeRateDto dto, LocalDate baseDate) {
+
         ExchangeRate entity = new ExchangeRate();
+
         entity.setBaseDate(baseDate);
         entity.setResult(dto.getResult());
         entity.setCurUnit(dto.getCur_unit());
@@ -74,10 +74,7 @@ public class ExchangeRateSaveService {
         entity.setTenDdEfeeR(dto.getTen_dd_efee_r());
         entity.setKftcBkpr(dto.getKftc_bkpr());
         entity.setKftcDealBasR(dto.getKftc_deal_bas_r());
-        // id, version 은 새로 생성이라면 null 유지
+
         return entity;
     }
 }
-
-
-

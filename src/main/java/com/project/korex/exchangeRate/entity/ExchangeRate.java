@@ -6,9 +6,7 @@ import lombok.*;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "exchange_rate", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"cur_unit"})
-})
+@Table(name = "exchange_rate")
 @Getter
 @Setter
 @NoArgsConstructor
