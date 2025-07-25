@@ -23,8 +23,6 @@ public class ExchangeRateService {
     @Value("${exchange-data}")
     private String data;
 
-//    private final String searchdate = getSearchdate();
-
     WebClient webClient;
 
     public JsonNode getExchangeDataSync(String searchdate) {
@@ -90,18 +88,4 @@ public class ExchangeRateService {
         }
     }
 
-//    // 토요일·일요일은 공식 환율 데이터가 제공되지 않음
-//    public String getSearchdate() {
-//
-//        LocalDate currentDate = LocalDate.now();
-//        DayOfWeek dayOfWeek = currentDate.getDayOfWeek();
-//        // 토요일
-//        if (dayOfWeek.getValue() == 6)
-//            return currentDate.minusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-//        // 일요일
-//        if (dayOfWeek.getValue() == 7)
-//            return currentDate.minusDays(2).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-//
-//        return currentDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-//    }
 }

@@ -46,17 +46,11 @@ public class ExchangeRateSaveService {
 
         // 저장
         exchangeRateRepository.saveAll(entityList);
-
-
     }
 
-    /**
-     * 특정 날짜 환율 데이터 조회 (예시)
-     */
     public List<ExchangeRate> findRatesByDate(LocalDate baseDate) {
         return exchangeRateRepository.findByBaseDate(baseDate);
     }
-
 
     private ExchangeRate convertDtoToEntity(ExchangeRateDto dto, LocalDate baseDate) {
 

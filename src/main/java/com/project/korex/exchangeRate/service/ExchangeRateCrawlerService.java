@@ -28,12 +28,12 @@ public class ExchangeRateCrawlerService {
 
         // 컬럼명 정의
         String[] fieldNames = {
-                "baseRate",     // 현재 환율
-                "buyCashRate",      // 현찰 살 때
-                "sellCashRate",     // 현찰 팔 때
-                "sendRate",         // 송금 보낼 때
-                "receiveRate",      // 송금 받을 때
-                "usdConversionRate"  // 미화환산율
+                "base_rate",     // 현재 환율
+                "buy_cash_rate",      // 현찰 살 때
+                "sell_cash_rate",     // 현찰 팔 때
+                "send_rate",         // 송금 보낼 때
+                "receive_rate",      // 송금 받을 때
+                "usd_conversion_rate"  // 미화환산율
         };
 
         for (Element row : rows) {
@@ -45,15 +45,13 @@ public class ExchangeRateCrawlerService {
             Elements tds = row.select("td"); // 모든 td 요소
 
             Map<String, String> rateData = new LinkedHashMap<>();
-            rateData.put("currencyCode", currencyCode);
+            rateData.put("currency_code", currencyCode);
 
             for (int i = 1; i <= 6; i++) {
                 String key = fieldNames[i - 1];
                 String value = tds.get(i).text().trim();
                 rateData.put(key, value);
             }
-
-            System.out.println(rateData);
 
             exchangeList.add(rateData);
 
