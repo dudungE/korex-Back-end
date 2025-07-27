@@ -2,6 +2,7 @@ package com.project.korex.exchangeRate.service;
 
 import com.project.korex.exchangeRate.dto.ExchangeRateDto;
 import com.project.korex.exchangeRate.entity.ExchangeRate;
+import com.project.korex.exchangeRate.repository.CurrencyRateRepository;
 import com.project.korex.exchangeRate.repository.ExchangeRateRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,12 +17,12 @@ public class ExchangeRateSaveService {
 
     private final ExchangeRateRepository exchangeRateRepository;
     private final ExchangeRateService exchangeRateService;
-    private final ExchangeRateCrawlerService exchangeRateCrawlerService;
 
-    public ExchangeRateSaveService(ExchangeRateRepository exchangeRateRepository, ExchangeRateService exchangeRateService, ExchangeRateCrawlerService exchangeRateCrawlerService) {
+
+    public ExchangeRateSaveService(ExchangeRateRepository exchangeRateRepository, ExchangeRateService exchangeRateService, ExchangeRateCrawlerService exchangeRateCrawlerService, CurrencyRateRepository currencyRateRepository) {
         this.exchangeRateRepository = exchangeRateRepository;
         this.exchangeRateService = exchangeRateService;
-        this.exchangeRateCrawlerService = exchangeRateCrawlerService;
+
     }
 
     /**
@@ -73,7 +74,5 @@ public class ExchangeRateSaveService {
 
         return entity;
     }
-
-
 
 }

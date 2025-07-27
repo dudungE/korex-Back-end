@@ -1,6 +1,7 @@
 package com.project.korex.exchangeRate.controller;
 
 import com.project.korex.exchangeRate.entity.ExchangeRate;
+import com.project.korex.exchangeRate.service.CurrencyRateSaveService;
 import com.project.korex.exchangeRate.service.ExchangeRateCrawlerService;
 import com.project.korex.exchangeRate.service.ExchangeRateSaveService;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ public class ExchangeRateSaveController {
 
     private final ExchangeRateSaveService exchangeRateSaveService;
     private final ExchangeRateCrawlerService exchangeRateCrawlerService;
+    private final CurrencyRateSaveService currencyRateSaveService;
 
     /**
      * 환율 데이터 저장 (리스트와 기준 날짜를 함께 전송)
@@ -31,28 +33,24 @@ public class ExchangeRateSaveController {
 //        exchangeRateSaveService.saveExchangeRatesByDate(date);
 //        return ResponseEntity.ok("환율 데이터가 저장되었습니다.");
 //    }
-
-//    @PostMapping("/crawl/rates")
-//    public ResponseEntity<String> saveDailyRate(
-//            @RequestParam(value = "currencyCode", defaultValue = "USD") String currencyCode,
-//            @RequestParam(value = "page", defaultValue = "1") int page
-//    )
-//    {
-//        try {
-//            exchangeRateCrawlerService.crawlDailyRate(page);
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
-//
-//        return null;
-//    }
-
-    @GetMapping("/crawl/rates")
-    public ResponseEntity<List<Map<String,String>>> saveDailyRate(
+    @PostMapping("/crawl/rates")
+    public void saveDailyRate(
             @RequestParam(value = "currencyCode", defaultValue = "USD") String currencyCode,
             @RequestParam(value = "page", defaultValue = "1") int page
-    )
-    {
+    ) {
+
+        try {
+            currencyRateSaveService.saveCurrencyRateDaily(currencyCode, page);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @GetMapping("/crawl/rates")
+    public ResponseEntity<List<Map<String, String>>> getDailyRate(
+            @RequestParam(value = "currencyCode", defaultValue = "USD") String currencyCode,
+            @RequestParam(value = "page", defaultValue = "1") int page
+    ) {
         try {
             List<Map<String, String>> rateList = exchangeRateCrawlerService.crawlDailyRate(currencyCode, page);
             return ResponseEntity.ok(rateList);
@@ -61,13 +59,11 @@ public class ExchangeRateSaveController {
         }
     }
 
-
     /**
      * 날짜별 환율 데이터 조회
      */
     @GetMapping("/rates")
     public ResponseEntity<List<ExchangeRate>> getExchangeRates(
-//            @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam("date") @DateTimeFormat(pattern = "yyyyMMdd") LocalDate date) {
         List<ExchangeRate> rates = exchangeRateSaveService.findRatesByDate(date);
         if (rates.isEmpty()) {

@@ -1,17 +1,15 @@
 package com.project.korex.exchangeRate.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "currency_rate")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -27,8 +25,8 @@ public class CurrencyRate {
     private LocalDate baseDate;
 
     // 통화 코드 (예: USD, EUR)
-    @Column(name = "cur_unit", length = 10, nullable = false)
-    private String curUnit;
+    @Column(name = "currency_code", length = 10, nullable = false)
+    private String currencyCode;
 
     // 기준 환율
     @Column(name = "base_rate")
