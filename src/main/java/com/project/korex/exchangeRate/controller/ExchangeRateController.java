@@ -36,7 +36,7 @@ public class ExchangeRateController {
     @Operation(summary = "실시간 환율 데이터 조회(네이버 환율 크롤링)")
     public ResponseEntity<List<Map<String, String>>> getExchangeRates() {
         try {
-            List<Map<String, String>> exchangeRates = exchangeRateCrawlerService.crawlExchangeRates();
+            List<Map<String, String>> exchangeRates = exchangeRateCrawlerService.crawlRealtimeRate();
             return ResponseEntity.ok(exchangeRates);  // HTTP 200 OK
         } catch (IOException e) {
             // 에러 로그

@@ -16,10 +16,12 @@ public class ExchangeRateSaveService {
 
     private final ExchangeRateRepository exchangeRateRepository;
     private final ExchangeRateService exchangeRateService;
+    private final ExchangeRateCrawlerService exchangeRateCrawlerService;
 
-    public ExchangeRateSaveService(ExchangeRateRepository exchangeRateRepository, ExchangeRateService exchangeRateService) {
+    public ExchangeRateSaveService(ExchangeRateRepository exchangeRateRepository, ExchangeRateService exchangeRateService, ExchangeRateCrawlerService exchangeRateCrawlerService) {
         this.exchangeRateRepository = exchangeRateRepository;
         this.exchangeRateService = exchangeRateService;
+        this.exchangeRateCrawlerService = exchangeRateCrawlerService;
     }
 
     /**
@@ -71,4 +73,7 @@ public class ExchangeRateSaveService {
 
         return entity;
     }
+
+
+
 }
