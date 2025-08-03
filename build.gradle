@@ -32,6 +32,8 @@ dependencies {
 
 	// Oracle
 	runtimeOnly 'com.oracle.database.jdbc:ojdbc11'
+	// Postgresql
+	runtimeOnly 'org.postgresql:postgresql'
 	// JPA
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
@@ -46,6 +48,11 @@ dependencies {
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'          // 컴파일 시에만 필요
 	annotationProcessor 'org.projectlombok:lombok'  // 어노테이션 처리기 등록
+
+	// jwt
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5'
 
 	// Test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
