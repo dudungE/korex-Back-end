@@ -61,7 +61,7 @@ public class ExchangeRateCrawlerService {
     }
 
 
-    public List<Map<String, String>> crawlDailyRate(String currencyCode,int page) throws IOException {
+    public List<Map<String, String>> crawlDailyRate(String currencyCode, int page) throws IOException {
 
         String url = String.format(URL_DAILY, currencyCode, page);
         Document doc = Jsoup.connect(url).userAgent("Mozilla/5.0").get();
@@ -123,8 +123,6 @@ public class ExchangeRateCrawlerService {
 
         return exchangeList;
     }
-
-
 
 }
 

@@ -1,16 +1,13 @@
 package com.project.korex.exchangeRate.controller;
 
-import com.project.korex.exchangeRate.entity.ExchangeRate;
-import com.project.korex.exchangeRate.service.CurrencyRateSaveService;
 import com.project.korex.exchangeRate.service.ExchangeRateCrawlerService;
 import com.project.korex.exchangeRate.service.ExchangeRateSaveService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -19,21 +16,16 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ExchangeRateSaveController {
 
-    private final ExchangeRateSaveService exchangeRateSaveService;
+
     private final ExchangeRateCrawlerService exchangeRateCrawlerService;
-    private final CurrencyRateSaveService currencyRateSaveService;
+    private final ExchangeRateSaveService currencyRateSaveService;
 
     /**
      * 환율 데이터 저장 (리스트와 기준 날짜를 함께 전송)
      */
-//    @PostMapping("/rates")
-//    public ResponseEntity<String> saveExchangeRates(
-////            @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-//            @RequestParam("date") @DateTimeFormat(pattern = "yyyyMMdd") String date) {
-//        exchangeRateSaveService.saveExchangeRatesByDate(date);
-//        return ResponseEntity.ok("환율 데이터가 저장되었습니다.");
-//    }
+
     @PostMapping("/crawl/rates")
+    @Operation(summary = "[TEST]개별 통화 일자별 환율 데이터 저장(네이버 환율 크롤링 - page별 10개 data)")
     public void saveDailyRate(
             @RequestParam(value = "currencyCode", defaultValue = "USD") String currencyCode,
             @RequestParam(value = "page", defaultValue = "1") int page
@@ -46,7 +38,9 @@ public class ExchangeRateSaveController {
         }
     }
 
+
     @GetMapping("/crawl/rates")
+    @Operation(summary = "[TEST]개별 통화 일자별 환율 데이터 조회(네이버 환율 크롤링 - page별 10개 data)")
     public ResponseEntity<List<Map<String, String>>> getDailyRate(
             @RequestParam(value = "currencyCode", defaultValue = "USD") String currencyCode,
             @RequestParam(value = "page", defaultValue = "1") int page
@@ -59,16 +53,5 @@ public class ExchangeRateSaveController {
         }
     }
 
-    /**
-     * 날짜별 환율 데이터 조회
-     */
-    @GetMapping("/rates")
-    public ResponseEntity<List<ExchangeRate>> getExchangeRates(
-            @RequestParam("date") @DateTimeFormat(pattern = "yyyyMMdd") LocalDate date) {
-        List<ExchangeRate> rates = exchangeRateSaveService.findRatesByDate(date);
-        if (rates.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(rates);
-    }
+
 }

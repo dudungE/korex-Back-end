@@ -3,6 +3,7 @@ package com.project.korex.exchangeRate.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
@@ -11,47 +12,47 @@ import java.time.LocalDate;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
+@Builder
 public class ExchangeRate {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "exchange_seq_gen")
-    @SequenceGenerator(name = "exchange_seq_gen", sequenceName = "exchange_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "currency_seq_gen")
+    @SequenceGenerator(name = "currency_seq_gen", sequenceName = "currency_seq", allocationSize = 1)
     private Long id;
 
-    private Integer result; // 결과
-
-    @Column(name = "cur_unit", length = 10, nullable = false)
-    private String curUnit; // 통화코드
-
-    @Column(name = "cur_nm", length = 50)
-    private String curNm; // 국가/통화명
-
-    @Column(length = 20)
-    private String ttb; // 전신환(송금) 받으실 때
-
-    @Column(length = 20)
-    private String tts; // 전신환(송금) 보내실 때
-
-    @Column(name = "deal_bas_r", length = 20)
-    private String dealBasR; // 매매 기준율
-
-    @Column(length = 20)
-    private String bkpr; // 장부가격
-
-    @Column(name = "yy_efee_r", length = 20)
-    private String yyEfeeR; // 년환가료율
-
-    @Column(name = "ten_dd_efee_r", length = 20)
-    private String tenDdEfeeR; // 10일환가료율
-
-    @Column(name = "kftc_bkpr", length = 20)
-    private String kftcBkpr; // 서울외국환중개 매매기준율
-
-    @Column(name = "kftc_deal_bas_r", length = 20)
-    private String kftcDealBasR; // 서울외국환중개장부가격
-
+    // 기준일
     @Column(name = "base_date", nullable = false)
-    private LocalDate baseDate; // 환율 기준 날짜
-}
+    private LocalDate baseDate;
 
+    // 통화 코드 (예: USD, EUR)
+    @Column(name = "currency_code", length = 10, nullable = false)
+    private String currencyCode;
+
+    // 기준 환율
+    @Column(name = "base_rate")
+    private BigDecimal baseRate;
+
+    // 전일 대비 방향 (예: 상승, 하락)
+    @Column(name = "change_direction")
+    private String changeDirection;
+
+    // 전일 대비 변화량
+    @Column(name = "change_amount")
+    private BigDecimal changeAmount;
+
+    // 현찰 살 때 환율
+    @Column(name = "buy_cash_rate")
+    private BigDecimal buyCashRate;
+
+    // 현찰 팔 때 환율
+    @Column(name = "sell_cash_rate")
+    private BigDecimal sellCashRate;
+
+    // 송금 보낼 때
+    @Column(name = "send_rate")
+    private BigDecimal sendRate;
+
+    // 송금 받을 때
+    @Column(name = "receive_rate")
+    private BigDecimal receiveRate;
+}

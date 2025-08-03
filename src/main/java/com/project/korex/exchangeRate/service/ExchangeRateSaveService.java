@@ -2,77 +2,114 @@ package com.project.korex.exchangeRate.service;
 
 import com.project.korex.exchangeRate.dto.ExchangeRateDto;
 import com.project.korex.exchangeRate.entity.ExchangeRate;
-import com.project.korex.exchangeRate.repository.CurrencyRateRepository;
 import com.project.korex.exchangeRate.repository.ExchangeRateRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ExchangeRateSaveService {
 
-    private final ExchangeRateRepository exchangeRateRepository;
-    private final ExchangeRateService exchangeRateService;
+    private final ExchangeRateRepository currencyRateRepository;
+    private final ExchangeRateCrawlerService exchangeRateCrawlerService;
 
+    private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd");
 
-    public ExchangeRateSaveService(ExchangeRateRepository exchangeRateRepository, ExchangeRateService exchangeRateService, ExchangeRateCrawlerService exchangeRateCrawlerService, CurrencyRateRepository currencyRateRepository) {
-        this.exchangeRateRepository = exchangeRateRepository;
-        this.exchangeRateService = exchangeRateService;
+    /**
+     * 크롤링해서 가져온 데이터를 DTO 변환 후 저장하는 메서드
+     */
+    @Transactional
+    public void saveCurrencyRateDaily(String currencyCode, int page) throws Exception {
+        // 1. 크롤링 데이터 가져오기 (List<Map<String,String>>)
+        List<Map<String, String>> rawDataList = exchangeRateCrawlerService.crawlDailyRate(currencyCode, page);
 
+        if (rawDataList == null || rawDataList.isEmpty()) {
+            System.out.println("크롤링 데이터가 없습니다.");
+            return;
+        }
+
+        // 2. 크롤링 데이터 -> DTO 변환
+        List<ExchangeRateDto> dtoList = rawDataList.stream()
+                .map(map -> mapToDto(map, currencyCode))
+                .toList();
+
+        // 3. 기준일 기준 중복 데이터 삭제
+        LocalDate baseDate = dtoList.get(0).getBaseDate();
+        currencyRateRepository.deleteByBaseDate(baseDate);
+
+        // 4. DTO -> Entity 변환 및 저장
+        List<ExchangeRate> entities = dtoList.stream()
+                .map(this::dtoToEntity)
+                .collect(Collectors.toList());
+
+        currencyRateRepository.saveAll(entities);
+
+        System.out.println("데이터 저장 완료: " + entities.size() + "건");
     }
 
     /**
-     * 특정 날짜 기준의 환율 데이터 리스트 저장
-     * 기존 데이터가 있다면 삭제 후 저장하거나 업데이트 처리 가능
+     * Map<String, String> -> CurrencyRateDto 변환
      */
-    @Transactional
-    public void saveExchangeRatesByDate(String baseDate) {
+    private ExchangeRateDto mapToDto(Map<String, String> map, String currencyCode) {
+        ExchangeRateDto dto = new ExchangeRateDto();
 
-        // String → LocalDate 변환
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
-        LocalDate parsedDate = LocalDate.parse(baseDate, formatter);
+        // 날짜 변환
+        String baseDateStr = map.get("base_date");
+        LocalDate baseDate = LocalDate.parse(baseDateStr, dateFormatter);
+        dto.setBaseDate(baseDate);
 
-        // 기존 데이터 삭제 (optional) -> 예외처리하기
-        exchangeRateRepository.deleteByBaseDate(parsedDate);
+        dto.setCurrencyCode(currencyCode); // currencyCode가 외부에서 받아야 하면 파라미터로 바꾸셔야 합니다.
 
-        // DTO 리스트 가져오기 (외부 API, 혹은 서비스 호출)
-        List<ExchangeRateDto> dtoList = exchangeRateService.getExchangeDataAsDtoList(baseDate);
+        // 숫자 필드는 BigDecimal로 변환, 변환 불가 시 null 처리
+        dto.setBaseRate(parseBigDecimal(map.get("base_rate")));
+        dto.setChangeDirection(map.get("change_direction"));
+        dto.setChangeAmount(parseBigDecimal(map.get("change_amount")));
+        dto.setBuyCashRate(parseBigDecimal(map.get("buy_cash_rate")));
+        dto.setSellCashRate(parseBigDecimal(map.get("sell_cash_rate")));
+        dto.setSendRate(parseBigDecimal(map.get("send_rate")));
+        dto.setReceiveRate(parseBigDecimal(map.get("receive_rate")));
 
-        // DTO → Entity 리스트 변환
-        List<ExchangeRate> entityList = dtoList.stream()
-                .map(dto -> convertDtoToEntity(dto, parsedDate))
-                .collect(Collectors.toList());
-
-        // 저장
-        exchangeRateRepository.saveAll(entityList);
+        return dto;
     }
 
-    public List<ExchangeRate> findRatesByDate(LocalDate baseDate) {
-        return exchangeRateRepository.findByBaseDate(baseDate);
+    /**
+     * DTO -> Entity 변환
+     */
+    private ExchangeRate dtoToEntity(ExchangeRateDto dto) {
+        return ExchangeRate.builder()
+                .baseDate(dto.getBaseDate())
+                .currencyCode(dto.getCurrencyCode())
+                .baseRate(dto.getBaseRate())
+                .changeDirection(dto.getChangeDirection())
+                .changeAmount(dto.getChangeAmount())
+                .buyCashRate(dto.getBuyCashRate())
+                .sellCashRate(dto.getSellCashRate())
+                .sendRate(dto.getSendRate())
+                .receiveRate(dto.getReceiveRate())
+                .build();
     }
 
-    private ExchangeRate convertDtoToEntity(ExchangeRateDto dto, LocalDate baseDate) {
-
-        ExchangeRate entity = new ExchangeRate();
-
-        entity.setBaseDate(baseDate);
-        entity.setResult(dto.getResult());
-        entity.setCurUnit(dto.getCur_unit());
-        entity.setCurNm(dto.getCur_nm());
-        entity.setTtb(dto.getTtb());
-        entity.setTts(dto.getTts());
-        entity.setDealBasR(dto.getDeal_bas_r());
-        entity.setBkpr(dto.getBkpr());
-        entity.setYyEfeeR(dto.getYy_efee_r());
-        entity.setTenDdEfeeR(dto.getTen_dd_efee_r());
-        entity.setKftcBkpr(dto.getKftc_bkpr());
-        entity.setKftcDealBasR(dto.getKftc_deal_bas_r());
-
-        return entity;
+    /**
+     * String -> BigDecimal 변환 (안전하게 처리)
+     */
+    private BigDecimal parseBigDecimal(String value) {
+        if (value == null || value.isEmpty() || value.equals("-")) {
+            return null;
+        }
+        try {
+            // 숫자에 쉼표가 포함되어 있을 수 있으니 제거 후 변환
+            String sanitized = value.replaceAll(",", "");
+            return new BigDecimal(sanitized);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
-
 }

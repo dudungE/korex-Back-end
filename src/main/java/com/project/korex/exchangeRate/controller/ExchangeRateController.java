@@ -1,17 +1,19 @@
 package com.project.korex.exchangeRate.controller;
 
 import com.project.korex.exchangeRate.dto.ExchangeRateDto;
+import com.project.korex.exchangeRate.dto.EximExchangeRateDto;
 import com.project.korex.exchangeRate.service.ExchangeRateCrawlerService;
 import com.project.korex.exchangeRate.service.ExchangeRateService;
+import com.project.korex.exchangeRate.service.EximExchangeRateService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -22,15 +24,12 @@ public class ExchangeRateController {
 
     private final ExchangeRateService exchangeRateService;
     private final ExchangeRateCrawlerService exchangeRateCrawlerService;
+    private final EximExchangeRateService eximExchangeRateService;
 
-    @GetMapping("/rates")
-    @Operation(summary = "일자별 고시된 환율 조회(수출입은행 api)")
-    public ResponseEntity<List<ExchangeRateDto>> getExchangeRates(
-            @RequestParam(defaultValue = "#{T(java.time.LocalDate).now().format(T(java.time.format.DateTimeFormatter).ofPattern('yyyyMMdd'))}") String searchdate
-    ) {
-        return ResponseEntity.ok(exchangeRateService.getExchangeDataAsDtoList(searchdate));
-    }
 
+    /**
+     * 실시간 환율 데이터 조회
+     */
     // @GetMapping 메서드에 ResponseEntity를 붙이면 HTTP 상태 코드, 헤더 등을 더 명확히 제어
     @GetMapping("/real-time")
     @Operation(summary = "실시간 환율 데이터 조회(네이버 환율 크롤링)")
@@ -44,5 +43,47 @@ public class ExchangeRateController {
             return ResponseEntity.internalServerError().build();  // HTTP 500
         }
     }
+
+    /**
+     * 특정 날짜에 여러 통화코드 환율 조회
+     */
+    @GetMapping("/by-date")
+    @Operation(summary = "특정 날짜에 여러 통화코드 환율 조회(PostgreSQL DataBase)")
+    public List<ExchangeRateDto> getRatesByDateAndCurrencies(
+//            @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date)
+            @RequestParam("date") String dateStr) {
+        LocalDate date;
+        try {
+            date = LocalDate.parse(dateStr);
+        } catch (Exception e) {
+            date = LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyyMMdd"));
+        }
+
+        // 출력 통화 지정
+        List<String> currencies = Arrays.asList("USD", "EUR", "JPY", "CNY", "CAD", "CHF");
+
+        return exchangeRateService.getExchangeRatesByDateAndCurrencies(date, currencies);
+    }
+
+    /**
+     * 특정 통화코드에 대한 일자별 환율 조회
+     */
+    @GetMapping("/by-currency/{currencyCode}")
+    @Operation(summary = "특정 통화코드에 대한 일자별 환율 조회(PostgreSQL DataBase)")
+    public List<ExchangeRateDto> getRatesByCurrencyOrderedByDate(
+            @PathVariable String currencyCode) {
+
+        return exchangeRateService.getExchangeRatesByCurrencyOrderedByDate(currencyCode);
+    }
+
+
+    @GetMapping("/rates")
+    @Operation(summary = "[TEST]일자별 고시된 환율 조회(수출입은행 api)")
+    public ResponseEntity<List<EximExchangeRateDto>> getExchangeRates(
+            @RequestParam(defaultValue = "#{T(java.time.LocalDate).now().format(T(java.time.format.DateTimeFormatter).ofPattern('yyyyMMdd'))}") String searchdate
+    ) {
+        return ResponseEntity.ok(eximExchangeRateService.getExchangeDataAsDtoList(searchdate));
+    }
+
 
 }

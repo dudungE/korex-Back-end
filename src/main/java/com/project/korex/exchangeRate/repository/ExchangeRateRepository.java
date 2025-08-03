@@ -10,10 +10,16 @@ import java.util.List;
 @Repository
 public interface ExchangeRateRepository extends JpaRepository<ExchangeRate, Long> {
 
-    // 날짜 기준 삭제
+    // 특정 날짜에 해당하는 모든 환율 data 조회
+    List<ExchangeRate> findByBaseDate(LocalDate baseDate);
+
+    // 특정 통화코드의 일자 환율 데이터 조회(날짜 오름차순)
+    List<ExchangeRate> findByCurrencyCodeOrderByBaseDateAsc(String currencyCode);
+
+    // 특정 날짜 및 통화 코드 리스트에 해당하는 환율 조회
+    List<ExchangeRate> findByBaseDateAndCurrencyCodeIn(LocalDate baseDate, List<String> currencyCodes);
+
     void deleteByBaseDate(LocalDate baseDate);
 
-    // 날짜별 조회
-    List<ExchangeRate> findByBaseDate(LocalDate baseDate);
 
 }
