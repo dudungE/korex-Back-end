@@ -29,7 +29,7 @@ public class ExchangeRateCrawlerService {
 
         // 컬럼명 정의
         String[] fieldNames = {
-                "base_rate",     // 매매 기준율
+                "base_rate",     // 기준 환율
                 "buy_cash_rate",      // 현찰 살 때
                 "sell_cash_rate",     // 현찰 팔 때
                 "send_rate",         // 송금 보낼 때
