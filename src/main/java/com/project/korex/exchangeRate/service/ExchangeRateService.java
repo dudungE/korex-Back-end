@@ -1,107 +1,60 @@
 package com.project.korex.exchangeRate.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.korex.exchangeRate.dto.ExchangeRateDto;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.util.DefaultUriBuilderFactory;
+import com.project.korex.exchangeRate.entity.ExchangeRate;
+import com.project.korex.exchangeRate.repository.ExchangeRateRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
-@Component
+@Service
+@RequiredArgsConstructor
 public class ExchangeRateService {
 
-    @Value("${exchange-authkey}")
-    private String authkey;
+    private final ExchangeRateRepository exchangeRateRepository;
 
-    @Value("${exchange-data}")
-    private String data;
-
-//    private final String searchdate = getSearchdate();
-
-    WebClient webClient;
-
-    public JsonNode getExchangeDataSync(String searchdate) {
-
-        DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory();
-        factory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.NONE);
-
-        // WebClient를 생성합니다.
-        webClient = WebClient.builder().uriBuilderFactory(factory).build();
-
-        // WebClient를 사용하여 동기적으로 데이터를 요청하고, 바로 parseJson 함수를 호출합니다.
-        String responseBody = webClient.get()
-                .uri(builder -> builder
-                        .scheme("https")
-                        .host("oapi.koreaexim.go.kr")
-                        .path("/site/program/financial/exchangeJSON")
-                        .queryParam("authkey", authkey)
-                        .queryParam("searchdate", searchdate)
-                        .queryParam("data", data)
-                        .build())
-                .retrieve()
-                .bodyToMono(String.class)
-                .block(); // 동기적으로 결과를 얻음
-        return parseJson(responseBody);
+    /**
+     * 특정 날짜에 여러 통화코드에 해당하는 환율 데이터 조회
+     */
+    @Transactional(readOnly = true)
+    public List<ExchangeRateDto> getExchangeRatesByDateAndCurrencies(LocalDate baseDate, List<String> currencyCodes) {
+        List<ExchangeRate> rates = exchangeRateRepository.findByBaseDateAndCurrencyCodeIn(baseDate, currencyCodes);
+        return rates.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
-    public JsonNode parseJson(String responseBody) {
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            return objectMapper.readTree(responseBody);
-        } catch (IOException e) {
-            // 예외 처리 필요
-            e.printStackTrace();
-            return null;
-        }
+    /**
+     * 특정 통화코드에 대해 일자별 환율 데이터 조회
+     */
+    @Transactional(readOnly = true)
+    public List<ExchangeRateDto> getExchangeRatesByCurrencyOrderedByDate(String currencyCode) {
+        List<ExchangeRate> rates = exchangeRateRepository.findByCurrencyCodeOrderByBaseDateAsc(currencyCode);
+        return rates.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
-    public List<ExchangeRateDto> getExchangeDataAsDtoList(String searchdate) {
-        JsonNode jsonNode = getExchangeDataSync(searchdate);
 
-        if (jsonNode != null && jsonNode.isArray()) {
-            List<ExchangeRateDto> exchangeDTOList = new ArrayList<>();
-
-            for (JsonNode node : jsonNode) {
-                ExchangeRateDto exchangeDTO = convertJsonToExchangeDto(node);
-                exchangeDTOList.add(exchangeDTO);
-            }
-
-            return exchangeDTOList;
-        }
-
-        return Collections.emptyList();
+    /**
+     * Entity -> DTO 변환 메서드
+     */
+    private ExchangeRateDto toDto(ExchangeRate entity) {
+        ExchangeRateDto dto = new ExchangeRateDto();
+        dto.setCurrencyCode(entity.getCurrencyCode());
+        dto.setBaseDate(entity.getBaseDate());
+        dto.setBaseRate(entity.getBaseRate());
+        dto.setChangeDirection(entity.getChangeDirection());
+        dto.setChangeAmount(entity.getChangeAmount());
+        dto.setBuyCashRate(entity.getBuyCashRate());
+        dto.setSellCashRate(entity.getSellCashRate());
+        dto.setSendRate(entity.getSendRate());
+        dto.setReceiveRate(entity.getReceiveRate());
+        return dto;
     }
 
-    public ExchangeRateDto convertJsonToExchangeDto(JsonNode jsonNode) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            return objectMapper.treeToValue(jsonNode, ExchangeRateDto.class);
-        } catch (JsonProcessingException e) {
-            // 예외 처리 필요
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-//    // 토요일·일요일은 공식 환율 데이터가 제공되지 않음
-//    public String getSearchdate() {
-//
-//        LocalDate currentDate = LocalDate.now();
-//        DayOfWeek dayOfWeek = currentDate.getDayOfWeek();
-//        // 토요일
-//        if (dayOfWeek.getValue() == 6)
-//            return currentDate.minusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-//        // 일요일
-//        if (dayOfWeek.getValue() == 7)
-//            return currentDate.minusDays(2).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-//
-//        return currentDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-//    }
 }
