@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   spring:
-    image: hyunjin11/korex:latest
+    image: postgres:latest
     container_name: spring-app
     ports:
       - "8080:8080"

@@ -47,7 +47,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             PasswordMismatchException.class,
             LoginFailedException.class,
-            TokenNotFoundException.class
+            TokenNotFoundException.class,
+            VerificationTokenNotFoundException.class,
+            InvalidVerificationCodeException.class
     })
     public ResponseEntity<ErrorResponseDto> handleBadRequestException(RuntimeException ex, HttpServletRequest request) {
         ErrorCode errorCode = getErrorCodeFromException(ex);
@@ -60,7 +62,8 @@ public class GlobalExceptionHandler {
 
     // 401 UNAUTHORIZED - 인증 실패
     @ExceptionHandler({
-            InvalidTokenException.class
+            InvalidTokenException.class,
+            TokenExpriedException.class
     })
     public ResponseEntity<ErrorResponseDto> handleUnauthorizedException(RuntimeException ex, HttpServletRequest request) {
         ErrorCode errorCode = getErrorCodeFromException(ex);

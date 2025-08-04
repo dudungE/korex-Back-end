@@ -14,24 +14,30 @@ public class EmailVerificationToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String token;
+    @Column(nullable = false)
+    private String email;
 
+    @Column(nullable = false, length = 6)
+    private String code;  // 6자리 숫자 코드
+
+    @Column(nullable = false)
+    private boolean verified = false;
+
+    @Column(nullable = false)
     private LocalDateTime expiryDate;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
-
     @Builder
-    public EmailVerificationToken(String token, LocalDateTime expiryDate, User user) {
-        this.token = token;
+    public EmailVerificationToken(String code, LocalDateTime expiryDate) {
+        this.code = code;
         this.expiryDate = expiryDate;
-        this.user = user;
     }
 
-    public EmailVerificationToken(String token, User user) {
-        this.token = token;
-        this.user = user;  // 여기 수정
+    public EmailVerificationToken(String code) {
+        this.code = code;
+    }
+
+    public void markAsVerified() {
+        this.verified = true;
     }
 }
 

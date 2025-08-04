@@ -20,7 +20,7 @@ public class RefreshToken extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private User user;
+    private Users user;
 
     @Column(name = "refresh_token", nullable = false, length = 512)
     private String token;
@@ -32,14 +32,14 @@ public class RefreshToken extends BaseEntity {
     private String deviceInfo;
 
     @Builder
-    private RefreshToken(User user, String token, LocalDateTime expiredAt, String deviceInfo) {
+    private RefreshToken(Users user, String token, LocalDateTime expiredAt, String deviceInfo) {
         this.user = user;
         this.token = token;
         this.expiredAt = expiredAt;
         this.deviceInfo = deviceInfo;
     }
 
-    protected void setUser(User user) {
+    protected void setUser(Users user) {
         this.user = user;
     }
 }

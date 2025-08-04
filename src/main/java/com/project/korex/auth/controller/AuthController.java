@@ -40,7 +40,7 @@ public class AuthController {
     private final CookieUtil cookieUtil;
     private final JwtProvider jwtProvider;
 
-    @Operation(summary = "일반 로그인", description = "아이디/비밀번호로 로그인합니다.")
+    @Operation(summary = "로그인", description = "아이디/비밀번호로 로그인합니다.")
     @PostMapping("/login")
     public ResponseEntity<AuthStatusDto> loginMember(@RequestBody @Valid LoginRequestDto loginRequestDto, HttpServletResponse response) {
         Map<String, Object> authData = authService.login(loginRequestDto);
@@ -50,20 +50,18 @@ public class AuthController {
         UserInfoDto userInfo = (UserInfoDto) authData.get("userInfo");
 
         response.addHeader("Authorization", "Bearer " + accessToken);
-//        cookieUtil.addCookie(response, "accessToken", accessToken, 30 * 60);
         cookieUtil.addCookie(response, "refreshToken", refreshToken, 60 * 60 * 24 * 14);
 
         AuthStatusDto authStatusDto = new AuthStatusDto(true, userInfo);
         return new ResponseEntity<>(authStatusDto, HttpStatus.OK);
     }
 
-    @Operation(summary = "회원가입", description = "회원가입을 진행하고 인증 메일을 발송합니다.")
+    @Operation(summary = "회원가입", description = "회원가입을 진행합니다.")
     @PostMapping("/join")
     public ResponseEntity<String> joinMember(@RequestBody @Valid JoinRequestDto joinRequestDto) throws MessagingException {
         authService.joinMember(joinRequestDto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
-
 
     // 상태 확인 엔드포인트
     @Operation(summary = "인증 상태 확인", description = "현재 로그인된 사용자의 인증 상태를 반환합니다.")

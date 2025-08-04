@@ -30,10 +30,8 @@ dependencies {
 	// Spring Web (Spring MVC 기반 REST API 등 웹 애플리케이션 기능 제공)
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 
-	// Oracle
-	runtimeOnly 'com.oracle.database.jdbc:ojdbc11'
-	// Postgresql
-	runtimeOnly 'org.postgresql:postgresql'
+	// DB
+	implementation 'org.postgresql:postgresql:42.7.3'
 	// JPA
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
@@ -53,6 +51,10 @@ dependencies {
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5'
+
+	// smtp
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
 	// Test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'

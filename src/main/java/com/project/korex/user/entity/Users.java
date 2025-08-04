@@ -10,7 +10,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-public class User extends BaseEntity {
+public class Users extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,7 +19,7 @@ public class User extends BaseEntity {
     @Column(name = "login_id", unique = true, nullable = false, length = 50)
     private String loginId; // 실제 로그인 ID
 
-    //Social Login 시 password 없음
+
     private String password;
 
     @Column(nullable = false, length = 30)
@@ -28,8 +28,8 @@ public class User extends BaseEntity {
     @Column(unique = true, nullable = false, length = 100)
     private String email;
 
-    @Column(nullable = false)
-    private boolean enabled = false;
+    @Column(nullable = false, length = 30)
+    private String birth;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id")
@@ -39,13 +39,13 @@ public class User extends BaseEntity {
     private List<RefreshToken> refreshTokens = new ArrayList<>();
 
     @Builder
-    private User(String loginId, String password, String name, String email, Role role, boolean enabled) {
+    private Users(String loginId, String password, String name, String email, String birth, Role role) {
         this.loginId = loginId;
         this.password = password;
         this.name = name;
         this.email = email;
+        this.birth = birth;
         this.role = role;
-        this.enabled = enabled;
     }
 
     public void addRefreshToken(RefreshToken refreshToken) {

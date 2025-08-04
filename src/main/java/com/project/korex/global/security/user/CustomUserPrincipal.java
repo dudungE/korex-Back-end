@@ -1,6 +1,6 @@
 package com.project.korex.global.security.user;
 
-import com.project.korex.user.entity.User;
+import com.project.korex.user.entity.Users;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -13,13 +13,13 @@ import java.util.Map;
 @Getter
 public class CustomUserPrincipal implements UserDetails{
 
-    private final User user;
+    private final Users user;
     private final Map<String, Object> attributes;
     private final String attributeKey;
     private final String registrationId;
 
     //일반 Login 생성
-    public CustomUserPrincipal(User user) {
+    public CustomUserPrincipal(Users user) {
         this.user = user;
         this.attributes = null;
         this.attributeKey = null;

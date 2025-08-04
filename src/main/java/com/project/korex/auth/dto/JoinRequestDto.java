@@ -37,4 +37,14 @@ public class JoinRequestDto {
     @Email(message = "올바른 이메일 형식이 아닙니다.")
     private String email;
 
+    @Schema(description = "이메일 인증 코드", example = "123456", required = true)
+    @NotBlank(message = "이메일 인증 코드를 입력해주세요.")
+    @Pattern(regexp = "^[0-9]{6}$", message = "인증 코드는 6자리 숫자여야 합니다.")
+    private String emailCode;
+
+    @Schema(description = "생년월일", example = "20000101", required = true)
+    @NotBlank(message = "생년월일을 입력해주세요.")
+    @Pattern(regexp = "^\\d{8}$", message = "생년월일은 8자리 숫자(yyyyMMdd) 형식이어야 합니다.")
+    private String birth;
+
 }

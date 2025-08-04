@@ -10,7 +10,7 @@ import com.project.korex.global.security.jwt.JwtProvider;
 import com.project.korex.user.entity.EmailVerificationToken;
 import com.project.korex.user.entity.RefreshToken;
 import com.project.korex.user.entity.Role;
-import com.project.korex.user.entity.User;
+import com.project.korex.user.entity.Users;
 import com.project.korex.user.enums.RoleType;
 import com.project.korex.user.repository.jpa.EmailVerificationTokenRepository;
 import com.project.korex.user.repository.jpa.RefreshTokenRepository;
@@ -19,6 +19,8 @@ import com.project.korex.user.repository.jpa.UserJpaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 
 @Slf4j
@@ -40,9 +43,57 @@ public class AuthService {
     private final RoleJpaRepository roleJpaRepository;
     private final EmailVerificationTokenRepository tokenRepository;
     private final JwtProvider jwtProvider;
+    private final JavaMailSender mailSender;
 
     @Value("${custom.site-host}")
     private String siteHost;
+
+    public void sendVerificationCode(String email) {
+        Users user = userJpaRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
+
+        String code = generateRandomCode();
+
+        EmailVerificationToken token = EmailVerificationToken.builder()
+                .code(code)
+                .expiryDate(LocalDateTime.now().plusMinutes(10))
+                .build();
+
+        tokenRepository.save(token);
+        sendEmail(email, code);
+    }
+
+    public void verifyCode(String email, String inputCode) {
+        EmailVerificationToken token = tokenRepository.findTopByEmailOrderByExpiryDateDesc(email)
+                .orElseThrow(() -> new VerificationTokenNotFoundException(ErrorCode.VERIFICATION_TOKEN_NOT_FOUND));
+
+        if (token.getExpiryDate().isBefore(LocalDateTime.now())) {
+            throw new TokenExpriedException(ErrorCode.EXPIRED_TOKEN);
+        }
+
+        if (!token.getCode().equals(inputCode)) {
+            throw new InvalidVerificationCodeException(ErrorCode.INVALID_CODE);
+        }
+
+        // 인증 성공 처리
+        tokenRepository.save(token); // DB 반영
+
+        log.info("이메일 인증 성공: {}", email);
+    }
+
+
+    private String generateRandomCode() {
+        Random random = new Random();
+        return String.format("%06d", random.nextInt(999999));
+    }
+
+    private void sendEmail(String to, String code) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setSubject("[Korex] 이메일 인증 코드");
+        message.setText("인증 코드: " + code + "\n10분 이내에 입력해주세요.");
+        mailSender.send(message);
+    }
 
     public void joinMember(JoinRequestDto joinRequestDto) {
         // 비밀번호 확인 검증
@@ -61,35 +112,41 @@ public class AuthService {
         if (userJpaRepository.existsByEmail(email)) {
             throw new DuplicateEmailException(ErrorCode.DUPLICATE_EMAIL);
         }
+
+//        Users user = userJpaRepository.findByEmail(email)
+//                .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
+
+//        EmailVerificationToken verification = tokenRepository.findTopByUserOrderByExpiryDateDesc(user)
+//                .orElseThrow(() -> new TokenNotFoundException(ErrorCode.EMAIL_VERIFICATION_NOT_FOUND));
+//
+//        if (!verification.isVerified()) {
+//            throw new EmailNotVerifiedException(ErrorCode.EMAIL_NOT_VERIFIED);
+//        }
+
+
         // 유저 타입 가져오기
         Role role = roleJpaRepository.findByRoleName(RoleType.USER.getKey())
                 .orElseThrow(() -> new RoleNotFoundException(ErrorCode.ROLE_NOT_FOUND));
 
         // 유저 빌더 엔티티 생성(암호화 포함)
-        User newUser = User.builder()
+        Users newUser = Users.builder()
                 .loginId(joinRequestDto.getLoginId())
                 .password(passwordEncoder.encode(joinRequestDto.getPassword()))
                 .name(joinRequestDto.getName())
                 .email(joinRequestDto.getEmail())
+                .birth(joinRequestDto.getBirth())
                 .role(role)
-                .enabled(false)
                 .build();
 
         // 유저 저장
         userJpaRepository.save(newUser);
-
-        // 인증 토큰 생성
-        String token = UUID.randomUUID().toString();
-
-        EmailVerificationToken verificationToken = new EmailVerificationToken(token, newUser);
-        tokenRepository.save(verificationToken);
 
         log.info("회원가입 성공 ID : {}, loginId : {}", newUser.getId(), newUser.getLoginId());
     }
 
     public Map<String, Object> login(LoginRequestDto loginRequestDto) {
         String loginId = loginRequestDto.getLoginId();
-        User findUser = userJpaRepository.findByLoginId(loginId)
+        Users findUser = userJpaRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
 
 
@@ -159,7 +216,7 @@ public class AuthService {
         String role = jwtProvider.getRole(refreshToken);
 
         // 리프레시 토큰 엔티티 저장하기 위해 추출
-        User findUser = userJpaRepository.findByLoginId(loginId)
+        Users findUser = userJpaRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
 
         // 새로운 액세스 토큰 생성
