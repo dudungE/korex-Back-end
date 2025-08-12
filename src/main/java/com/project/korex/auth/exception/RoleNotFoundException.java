@@ -1,6 +1,6 @@
 package com.project.korex.auth.exception;
 
-import com.project.korex.global.code.ErrorCode;
+import com.project.korex.common.code.ErrorCode;
 import lombok.Getter;
 
 @Getter

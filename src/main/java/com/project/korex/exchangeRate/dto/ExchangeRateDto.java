@@ -1,22 +1,19 @@
 package com.project.korex.exchangeRate.dto;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.Data;
 
-@Getter
-@NoArgsConstructor
-@ToString
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Data
 public class ExchangeRateDto {
-    private Integer result; // 결과
-    private String cur_unit; // 통화코드
-    private String cur_nm; // 국가/통화명
-    private String ttb; // 전신환(송금) 받으실 때
-    private String tts; // 전신환(송금) 보내실 때
-    private String deal_bas_r; // 매매 기준율
-    private String bkpr; // 장부가격
-    private String yy_efee_r; // 년환가료율
-    private String ten_dd_efee_r; // 10일환가료율
-    private String kftc_bkpr; // 서울외국환중개 매매기준율
-    private String kftc_deal_bas_r; // 서울외국환중개장부가격
+    private String currencyCode;      // 통화 단위 (ex: USD)
+    private LocalDate baseDate;       // 기준 날짜
+    private BigDecimal baseRate;      // 기준 환율
+    private String changeDirection;   // 상승/하락
+    private BigDecimal changeAmount;  // 변화량
+    private BigDecimal buyCashRate;   // 현찰 살 때
+    private BigDecimal sellCashRate;  // 현찰 팔 때
+    private BigDecimal sendRate;      // 송금 보낼 때
+    private BigDecimal receiveRate;   // 송금 받을 때
 }

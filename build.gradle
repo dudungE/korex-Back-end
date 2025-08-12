@@ -25,15 +25,21 @@ repositories {
 
 dependencies {
 
-	// Spring Security Starter (인증/인가 기능)
+	// Spring Security
 	implementation 'org.springframework.boot:spring-boot-starter-security'
-	// Spring Web (Spring MVC 기반 REST API 등 웹 애플리케이션 기능 제공)
+
+	// Spring Web
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+
+	// crawling
+	implementation 'org.jsoup:jsoup:1.16.1'
 
 	// DB
 	implementation 'org.postgresql:postgresql:42.7.3'
+
 	// JPA
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.hibernate.validator:hibernate-validator'
 
 	// Websocket
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
@@ -44,8 +50,8 @@ dependencies {
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
 
 	// Lombok
-	compileOnly 'org.projectlombok:lombok'          // 컴파일 시에만 필요
-	annotationProcessor 'org.projectlombok:lombok'  // 어노테이션 처리기 등록
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
 
 	// jwt
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
