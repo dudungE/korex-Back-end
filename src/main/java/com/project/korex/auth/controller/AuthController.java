@@ -1,9 +1,6 @@
 package com.project.korex.auth.controller;
 
-import com.project.korex.auth.dto.AuthStatusDto;
-import com.project.korex.auth.dto.JoinRequestDto;
-import com.project.korex.auth.dto.LoginRequestDto;
-import com.project.korex.auth.dto.UserInfoDto;
+import com.project.korex.auth.dto.*;
 import com.project.korex.auth.exception.TokenNotFoundException;
 import com.project.korex.auth.service.AuthService;
 import com.project.korex.global.code.ErrorCode;
@@ -18,14 +15,12 @@ import jakarta.validation.Valid;
 import com.project.korex.global.util.CookieUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.MessagingException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -54,6 +49,18 @@ public class AuthController {
 
         AuthStatusDto authStatusDto = new AuthStatusDto(true, userInfo);
         return new ResponseEntity<>(authStatusDto, HttpStatus.OK);
+    }
+
+    @PostMapping("/send-code")
+    public ResponseEntity<?> sendCode(@Valid @RequestBody SendCodeRequest req) {
+        authService.sendVerificationCode(req.getEmail());
+        return ResponseEntity.ok(Map.of("success", true, "message", "인증 코드가 전송되었습니다."));
+    }
+
+    @PostMapping("/verify-code")
+    public ResponseEntity<?> verifyCode(@Valid @RequestBody VerifyCodeRequest req) {
+        authService.verifyCode(req.getEmail(), req.getCode());
+        return ResponseEntity.ok(Map.of("success", true, "message", "이메일 인증이 완료되었습니다."));
     }
 
     @Operation(summary = "회원가입", description = "회원가입을 진행합니다.")

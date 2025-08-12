@@ -16,20 +16,26 @@ import com.project.korex.user.repository.jpa.EmailVerificationTokenRepository;
 import com.project.korex.user.repository.jpa.RefreshTokenRepository;
 import com.project.korex.user.repository.jpa.RoleJpaRepository;
 import com.project.korex.user.repository.jpa.UserJpaRepository;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.spring6.SpringTemplateEngine;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -44,17 +50,19 @@ public class AuthService {
     private final EmailVerificationTokenRepository tokenRepository;
     private final JwtProvider jwtProvider;
     private final JavaMailSender mailSender;
+    private final SpringTemplateEngine templateEngine;
+    private final SecureRandom random = new SecureRandom();
+
+    private static final int VERIFY_EXPIRE_MINUTES = 10;
 
     @Value("${custom.site-host}")
     private String siteHost;
 
     public void sendVerificationCode(String email) {
-        Users user = userJpaRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
-
         String code = generateRandomCode();
 
         EmailVerificationToken token = EmailVerificationToken.builder()
+                .email(email)
                 .code(code)
                 .expiryDate(LocalDateTime.now().plusMinutes(10))
                 .build();
@@ -75,24 +83,39 @@ public class AuthService {
             throw new InvalidVerificationCodeException(ErrorCode.INVALID_CODE);
         }
 
-        // 인증 성공 처리
-        tokenRepository.save(token); // DB 반영
-
-        log.info("이메일 인증 성공: {}", email);
+        token.markAsVerified();
+        tokenRepository.save(token);
     }
 
-
     private String generateRandomCode() {
-        Random random = new Random();
-        return String.format("%06d", random.nextInt(999999));
+        return String.format("%06d", random.nextInt(1_000_000));
     }
 
     private void sendEmail(String to, String code) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject("[Korex] 이메일 인증 코드");
-        message.setText("인증 코드: " + code + "\n10분 이내에 입력해주세요.");
-        mailSender.send(message);
+        try {
+            Context ctx = new Context(Locale.KOREA);
+            ctx.setVariable("brand", "Korex");
+            ctx.setVariable("recipientName", "고객님");
+            ctx.setVariable("minutes", VERIFY_EXPIRE_MINUTES);
+            ctx.setVariable("code", code);
+            ctx.setVariable("supportEmail", "support@korex.com");
+
+            String html = templateEngine.process("email-verification", ctx);
+
+            // 메시지 생성/전송
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(
+                    message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
+
+            helper.setTo(to);
+            helper.setSubject("[Korex] 이메일 인증 코드");
+            helper.setText(html, true); // HTML
+            helper.setFrom(new InternetAddress("ghyunjin0913@gmail.com", "Korex")); // 발신자명
+
+            mailSender.send(message);
+        } catch (MessagingException | UnsupportedEncodingException e) {
+            throw new RuntimeException("이메일 전송에 실패했습니다.", e);
+        }
     }
 
     public void joinMember(JoinRequestDto joinRequestDto) {
@@ -113,16 +136,13 @@ public class AuthService {
             throw new DuplicateEmailException(ErrorCode.DUPLICATE_EMAIL);
         }
 
-//        Users user = userJpaRepository.findByEmail(email)
-//                .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
+        // 이메일 인증
+        EmailVerificationToken latest = tokenRepository.findTopByEmailOrderByExpiryDateDesc(email)
+                .orElseThrow(() -> new TokenNotFoundException(ErrorCode.EMAIL_VERIFICATION_NOT_FOUND));
 
-//        EmailVerificationToken verification = tokenRepository.findTopByUserOrderByExpiryDateDesc(user)
-//                .orElseThrow(() -> new TokenNotFoundException(ErrorCode.EMAIL_VERIFICATION_NOT_FOUND));
-//
-//        if (!verification.isVerified()) {
-//            throw new EmailNotVerifiedException(ErrorCode.EMAIL_NOT_VERIFIED);
-//        }
-
+        if (!latest.isVerified() || latest.getExpiryDate().isBefore(LocalDateTime.now())) {
+            throw new EmailNotVerifiedException(ErrorCode.EMAIL_NOT_VERIFIED);
+        }
 
         // 유저 타입 가져오기
         Role role = roleJpaRepository.findByRoleName(RoleType.USER.getKey())
@@ -173,7 +193,6 @@ public class AuthService {
 
         // 토큰 저장
         refreshTokenRepository.save(newRefreshToken);
-
 
         // 사용자 정보 생성
         UserInfoDto userInfo = new UserInfoDto(

@@ -10,35 +10,28 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class EmailVerificationToken {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
     private String email;
 
     @Column(nullable = false, length = 6)
-    private String code;  // 6자리 숫자 코드
+    private String code;
 
     @Column(nullable = false)
-    private boolean verified = false;
+    private boolean verified = false; // 기본값
 
     @Column(nullable = false)
     private LocalDateTime expiryDate;
 
     @Builder
-    public EmailVerificationToken(String code, LocalDateTime expiryDate) {
+    private EmailVerificationToken(String email, String code, LocalDateTime expiryDate) {
+        this.email = email;
         this.code = code;
         this.expiryDate = expiryDate;
+        this.verified = false; // 명시(선택이지만 안전)
     }
 
-    public EmailVerificationToken(String code) {
-        this.code = code;
-    }
-
-    public void markAsVerified() {
-        this.verified = true;
-    }
+    public void markAsVerified() { this.verified = true; }
 }
-
-

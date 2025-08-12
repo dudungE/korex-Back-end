@@ -49,7 +49,8 @@ public class GlobalExceptionHandler {
             LoginFailedException.class,
             TokenNotFoundException.class,
             VerificationTokenNotFoundException.class,
-            InvalidVerificationCodeException.class
+            InvalidVerificationCodeException.class,
+            EmailNotVerifiedException.class
     })
     public ResponseEntity<ErrorResponseDto> handleBadRequestException(RuntimeException ex, HttpServletRequest request) {
         ErrorCode errorCode = getErrorCodeFromException(ex);

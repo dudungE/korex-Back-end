@@ -27,6 +27,8 @@ public enum ErrorCode {
     VERIFICATION_TOKEN_NOT_FOUND(HttpStatus.BAD_REQUEST, "A005", "이메일 인증 토큰이 존재하지 않거나 만료되었습니다."),
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "A006", "인증 토큰이 만료되었습니다."),
     INVALID_CODE(HttpStatus.BAD_REQUEST, "A007", "인증 코드가 일치하지 않습니다."),
+    EMAIL_VERIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "A008", "이메일 인증 정보가 존재하지 않습니다."),
+    EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "A009", "이메일 인증이 완료되지 않았습니다."),
 
     // Role (RXXX)
     ROLE_NOT_FOUND(HttpStatus.NOT_FOUND, "R001", "역할을 찾을 수 없습니다.");
