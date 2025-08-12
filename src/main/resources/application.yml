@@ -1,0 +1,59 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: ${username}
+    password: ${dbpassword}
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}  # 보내는 이메일
+    password: ${MAIL_PASSWORD}  # 앱 비밀번호
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          ssl:
+            enable: false
+    service:
+      sender:
+        host: smtp.gmail.com
+        port: 587
+        username: ${MAIL_USERNAME}
+        password: ${MAIL_PASSWORD}
+        ssl:
+          enable: false
+
+  # JPA & Hibernate 설정
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+        default_batch_fetch_size: 100
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  # JWT 시크릿 키 (기존 설정)
+  jwt:
+    secret: 'OsvREsESUG7IErmzvcanI1CdfUP22M6mbwR/AZPURQ8='
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+custom:
+  site-host: http://localhost:8080       # ${SITE_HOST}

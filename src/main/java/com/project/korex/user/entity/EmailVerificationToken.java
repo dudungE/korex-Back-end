@@ -1,0 +1,37 @@
+package com.project.korex.user.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class EmailVerificationToken {
+
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String email;
+
+    @Column(nullable = false, length = 6)
+    private String code;
+
+    @Column(nullable = false)
+    private boolean verified = false; // 기본값
+
+    @Column(nullable = false)
+    private LocalDateTime expiryDate;
+
+    @Builder
+    private EmailVerificationToken(String email, String code, LocalDateTime expiryDate) {
+        this.email = email;
+        this.code = code;
+        this.expiryDate = expiryDate;
+        this.verified = false; // 명시(선택이지만 안전)
+    }
+
+    public void markAsVerified() { this.verified = true; }
+}
