@@ -1,6 +1,6 @@
 package com.project.korex.user.entity;
 
-import com.project.korex.global.BaseEntity;
+import com.project.korex.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
