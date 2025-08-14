@@ -1,5 +1,6 @@
 package com.project.korex.user.entity;
 
+import com.project.korex.user.enums.VerificationPurpose;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,16 +21,20 @@ public class EmailVerificationToken {
     private String code;
 
     @Column(nullable = false)
-    private boolean verified = false; // 기본값
+    private boolean verified = false;
+
+    @Enumerated(EnumType.STRING)
+    private VerificationPurpose purpose;
 
     @Column(nullable = false)
     private LocalDateTime expiryDate;
 
     @Builder
-    private EmailVerificationToken(String email, String code, LocalDateTime expiryDate) {
+    private EmailVerificationToken(String email, String code, LocalDateTime expiryDate, VerificationPurpose purpose) {
         this.email = email;
         this.code = code;
         this.expiryDate = expiryDate;
+        this.purpose = purpose;
         this.verified = false; // 명시(선택이지만 안전)
     }
 

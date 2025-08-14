@@ -1,11 +1,16 @@
 package com.project.korex.auth.controller;
 
-import com.project.korex.auth.dto.*;
+import com.project.korex.auth.dto.request.*;
+import com.project.korex.auth.dto.response.AuthStatusDto;
+import com.project.korex.auth.dto.response.FindIdResponse;
+import com.project.korex.auth.dto.response.ResetPasswordResponse;
+import com.project.korex.auth.dto.response.UserInfoDto;
 import com.project.korex.auth.exception.TokenNotFoundException;
 import com.project.korex.auth.service.AuthService;
 import com.project.korex.common.code.ErrorCode;
 import com.project.korex.common.security.jwt.JwtProvider;
 import com.project.korex.common.security.user.CustomUserPrincipal;
+import com.project.korex.user.enums.VerificationPurpose;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
@@ -53,13 +58,13 @@ public class AuthController {
 
     @PostMapping("/send-code")
     public ResponseEntity<?> sendCode(@Valid @RequestBody SendCodeRequest req) {
-        authService.sendVerificationCode(req.getEmail());
+        authService.sendVerificationCode(req.getEmail(), VerificationPurpose.valueOf(req.getPurpose()));
         return ResponseEntity.ok(Map.of("success", true, "message", "인증 코드가 전송되었습니다."));
     }
 
     @PostMapping("/verify-code")
     public ResponseEntity<?> verifyCode(@Valid @RequestBody VerifyCodeRequest req) {
-        authService.verifyCode(req.getEmail(), req.getCode());
+        authService.verifyCode(req.getEmail(), req.getCode(), VerificationPurpose.valueOf(req.getPurpose()));
         return ResponseEntity.ok(Map.of("success", true, "message", "이메일 인증이 완료되었습니다."));
     }
 
@@ -68,6 +73,18 @@ public class AuthController {
     public ResponseEntity<String> joinMember(@RequestBody @Valid JoinRequestDto joinRequestDto) throws MessagingException {
         authService.joinMember(joinRequestDto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PostMapping("/find-id")
+    public ResponseEntity<FindIdResponse> findId(@Valid @RequestBody FindIdRequest req) {
+        String loginId = authService.findId(req);
+        return ResponseEntity.ok(new FindIdResponse(loginId));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ResetPasswordResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
+        authService.resetPasswordAfterVerify(req.getEmail(), req.getCode(), req.getNewPassword());
+        return ResponseEntity.ok(new ResetPasswordResponse("비밀번호가 성공적으로 변경되었습니다."));
     }
 
     // 상태 확인 엔드포인트

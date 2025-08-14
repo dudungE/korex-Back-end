@@ -1,4 +1,4 @@
-package com.project.korex.auth.dto;
+package com.project.korex.auth.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
@@ -41,6 +41,14 @@ public class JoinRequestDto {
     @NotBlank(message = "이메일 인증 코드를 입력해주세요.")
     @Pattern(regexp = "^[0-9]{6}$", message = "인증 코드는 6자리 숫자여야 합니다.")
     private String emailCode;
+
+    @Schema(description = "휴대폰 번호", example = "01012345678", required = true)
+    @NotBlank(message = "휴대폰 번호를 입력해주세요.")
+    @Pattern(
+            regexp = "^(010|011|016|017|018|019)\\d{7,8}$",
+            message = "올바른 휴대폰 번호 형식이 아닙니다."
+    )
+    private String phone;
 
     @Schema(description = "생년월일", example = "20000101", required = true)
     @NotBlank(message = "생년월일을 입력해주세요.")

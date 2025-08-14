@@ -1,4 +1,4 @@
-package com.project.korex.auth.dto;
+package com.project.korex.auth.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

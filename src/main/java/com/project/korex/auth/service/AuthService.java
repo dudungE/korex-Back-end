@@ -1,8 +1,9 @@
 package com.project.korex.auth.service;
 
-import com.project.korex.auth.dto.JoinRequestDto;
-import com.project.korex.auth.dto.LoginRequestDto;
-import com.project.korex.auth.dto.UserInfoDto;
+import com.project.korex.auth.dto.request.FindIdRequest;
+import com.project.korex.auth.dto.request.JoinRequestDto;
+import com.project.korex.auth.dto.request.LoginRequestDto;
+import com.project.korex.auth.dto.response.UserInfoDto;
 import com.project.korex.auth.exception.*;
 import com.project.korex.common.code.ErrorCode;
 import com.project.korex.common.exception.UserNotFoundException;
@@ -12,6 +13,7 @@ import com.project.korex.user.entity.RefreshToken;
 import com.project.korex.user.entity.Role;
 import com.project.korex.user.entity.Users;
 import com.project.korex.user.enums.RoleType;
+import com.project.korex.user.enums.VerificationPurpose;
 import com.project.korex.user.repository.jpa.EmailVerificationTokenRepository;
 import com.project.korex.user.repository.jpa.RefreshTokenRepository;
 import com.project.korex.user.repository.jpa.RoleJpaRepository;
@@ -22,7 +24,6 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -58,40 +59,49 @@ public class AuthService {
     @Value("${custom.site-host}")
     private String siteHost;
 
-    public void sendVerificationCode(String email) {
+    public void sendVerificationCode(String email, VerificationPurpose purpose) {
         String code = generateRandomCode();
 
         EmailVerificationToken token = EmailVerificationToken.builder()
                 .email(email)
                 .code(code)
                 .expiryDate(LocalDateTime.now().plusMinutes(10))
+                .purpose(purpose)
                 .build();
 
         tokenRepository.save(token);
-        sendEmail(email, code);
+        sendEmail(email, code, purpose);
     }
 
-    public void verifyCode(String email, String inputCode) {
-        EmailVerificationToken token = tokenRepository.findTopByEmailOrderByExpiryDateDesc(email)
+    public void verifyCode(String email, String inputCode, VerificationPurpose purpose) {
+        var token = tokenRepository
+                .findTopByEmailAndPurposeOrderByExpiryDateDesc(email, purpose)
                 .orElseThrow(() -> new VerificationTokenNotFoundException(ErrorCode.VERIFICATION_TOKEN_NOT_FOUND));
 
-        if (token.getExpiryDate().isBefore(LocalDateTime.now())) {
+        if (token.getExpiryDate().isBefore(LocalDateTime.now()))
             throw new TokenExpriedException(ErrorCode.EXPIRED_TOKEN);
-        }
 
-        if (!token.getCode().equals(inputCode)) {
+        if (!token.getCode().equals(inputCode))
             throw new InvalidVerificationCodeException(ErrorCode.INVALID_CODE);
-        }
 
         token.markAsVerified();
         tokenRepository.save(token);
+    }
+
+    public void assertVerified(String email, VerificationPurpose purpose) {
+        EmailVerificationToken latest = tokenRepository
+                .findTopByEmailAndPurposeOrderByExpiryDateDesc(email, purpose)
+                .orElseThrow(() -> new TokenNotFoundException(ErrorCode.EMAIL_VERIFICATION_NOT_FOUND));
+
+        if (!latest.isVerified() || latest.getExpiryDate().isBefore(LocalDateTime.now()))
+            throw new EmailNotVerifiedException(ErrorCode.EMAIL_NOT_VERIFIED);
     }
 
     private String generateRandomCode() {
         return String.format("%06d", random.nextInt(1_000_000));
     }
 
-    private void sendEmail(String to, String code) {
+    private void sendEmail(String to, String code, VerificationPurpose purpose) {
         try {
             Context ctx = new Context(Locale.KOREA);
             ctx.setVariable("brand", "Korex");
@@ -100,7 +110,12 @@ public class AuthService {
             ctx.setVariable("code", code);
             ctx.setVariable("supportEmail", "support@korex.com");
 
-            String html = templateEngine.process("email-verification", ctx);
+            String subject = (purpose == VerificationPurpose.SIGN_UP)
+                    ? "[Korex] 이메일 인증 코드"
+                    : "[Korex] 비밀번호 재설정 인증 코드";
+            String template = "email-verification";
+
+            String html = templateEngine.process(template, ctx);
 
             // 메시지 생성/전송
             MimeMessage message = mailSender.createMimeMessage();
@@ -135,14 +150,8 @@ public class AuthService {
         if (userJpaRepository.existsByEmail(email)) {
             throw new DuplicateEmailException(ErrorCode.DUPLICATE_EMAIL);
         }
-
-        // 이메일 인증
-        EmailVerificationToken latest = tokenRepository.findTopByEmailOrderByExpiryDateDesc(email)
-                .orElseThrow(() -> new TokenNotFoundException(ErrorCode.EMAIL_VERIFICATION_NOT_FOUND));
-
-        if (!latest.isVerified() || latest.getExpiryDate().isBefore(LocalDateTime.now())) {
-            throw new EmailNotVerifiedException(ErrorCode.EMAIL_NOT_VERIFIED);
-        }
+        // 가입 검증 시
+        assertVerified(email, VerificationPurpose.SIGN_UP);
 
         // 유저 타입 가져오기
         Role role = roleJpaRepository.findByRoleName(RoleType.USER.getKey())
@@ -154,6 +163,7 @@ public class AuthService {
                 .password(passwordEncoder.encode(joinRequestDto.getPassword()))
                 .name(joinRequestDto.getName())
                 .email(joinRequestDto.getEmail())
+                .phone(joinRequestDto.getPhone())
                 .birth(joinRequestDto.getBirth())
                 .role(role)
                 .build();
@@ -208,6 +218,28 @@ public class AuthService {
         log.info("로그인 성공 및 토큰 생성. loginId = {}", loginId);
         return authData;
     }
+
+    @Transactional(readOnly = true)
+    public String findId(FindIdRequest req) {
+        var user = userJpaRepository.findByEmailAndName(req.getEmail(), req.getName())
+                .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
+
+        return user.getLoginId();
+    }
+
+    public void resetPasswordAfterVerify(String email, String code, String newPassword) {
+        // 이메일 인증 코드 검증 (목적: RESET_PASSWORD)
+        verifyCode(email, code, VerificationPurpose.RESET_PASSWORD);
+
+        Users user = userJpaRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
+
+        // 비밀번호 변경
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userJpaRepository.save(user);
+    }
+
+
 
     public void logout(String refreshToken) {
         // 토큰 찾고 있으면 제거

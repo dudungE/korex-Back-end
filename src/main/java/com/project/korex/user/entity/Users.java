@@ -1,6 +1,6 @@
 package com.project.korex.user.entity;
 
-import com.project.korex.global.BaseEntity;
+import com.project.korex.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,6 +28,9 @@ public class Users extends BaseEntity {
     @Column(unique = true, nullable = false, length = 100)
     private String email;
 
+    @Column(unique = true, nullable = false, length = 100)
+    private String phone;
+
     @Column(nullable = false, length = 30)
     private String birth;
 
@@ -39,11 +42,12 @@ public class Users extends BaseEntity {
     private List<RefreshToken> refreshTokens = new ArrayList<>();
 
     @Builder
-    private Users(String loginId, String password, String name, String email, String birth, Role role) {
+    private Users(String loginId, String password, String name, String email, String phone, String birth, Role role) {
         this.loginId = loginId;
         this.password = password;
         this.name = name;
         this.email = email;
+        this.phone = phone;
         this.birth = birth;
         this.role = role;
     }
@@ -51,5 +55,9 @@ public class Users extends BaseEntity {
     public void addRefreshToken(RefreshToken refreshToken) {
         this.refreshTokens.add(refreshToken);
         refreshToken.setUser(this);
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }
