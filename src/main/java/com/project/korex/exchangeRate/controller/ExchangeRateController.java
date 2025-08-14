@@ -1,10 +1,8 @@
 package com.project.korex.exchangeRate.controller;
 
 import com.project.korex.exchangeRate.dto.ExchangeRateDto;
-import com.project.korex.exchangeRate.dto.EximExchangeRateDto;
 import com.project.korex.exchangeRate.service.ExchangeRateCrawlerService;
 import com.project.korex.exchangeRate.service.ExchangeRateService;
-import com.project.korex.exchangeRate.service.EximExchangeRateService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +22,6 @@ public class ExchangeRateController {
 
     private final ExchangeRateService exchangeRateService;
     private final ExchangeRateCrawlerService exchangeRateCrawlerService;
-    private final EximExchangeRateService eximExchangeRateService;
 
 
     /**
@@ -75,15 +72,5 @@ public class ExchangeRateController {
 
         return exchangeRateService.getExchangeRatesByCurrencyOrderedByDate(currencyCode);
     }
-
-
-    @GetMapping("/rates")
-    @Operation(summary = "[TEST]일자별 고시된 환율 조회(수출입은행 api)")
-    public ResponseEntity<List<EximExchangeRateDto>> getExchangeRates(
-            @RequestParam(defaultValue = "#{T(java.time.LocalDate).now().format(T(java.time.format.DateTimeFormatter).ofPattern('yyyyMMdd'))}") String searchdate
-    ) {
-        return ResponseEntity.ok(eximExchangeRateService.getExchangeDataAsDtoList(searchdate));
-    }
-
 
 }
