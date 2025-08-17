@@ -34,6 +34,12 @@ public class Users extends BaseEntity {
     @Column(nullable = false, length = 30)
     private String birth;
 
+    @Column(name = "krw_account", nullable = false, length = 15)
+    private String krwAccount;
+
+    @Column(name = "foreign_account", nullable = false, length = 15)
+    private String foreignAccount;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id")
     private Role role; // 회원 권한 (USER, ADMIN)
@@ -42,13 +48,15 @@ public class Users extends BaseEntity {
     private List<RefreshToken> refreshTokens = new ArrayList<>();
 
     @Builder
-    private Users(String loginId, String password, String name, String email, String phone, String birth, Role role) {
+    private Users(String loginId, String password, String name, String email, String phone, String birth, String krwAccount, String foreignAccount, Role role) {
         this.loginId = loginId;
         this.password = password;
         this.name = name;
         this.email = email;
         this.phone = phone;
         this.birth = birth;
+        this.krwAccount = krwAccount;
+        this.foreignAccount = foreignAccount;
         this.role = role;
     }
 
