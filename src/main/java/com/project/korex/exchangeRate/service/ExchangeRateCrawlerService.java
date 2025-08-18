@@ -4,9 +4,12 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,9 +18,24 @@ import java.util.Map;
 @Service
 public class ExchangeRateCrawlerService {
 
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+    private static final String REDIS_KEY = "exchange:realtime";
+
     private static final String URL_REALTIME = "https://finance.naver.com/marketindex/exchangeList.naver";
     private static final String URL_DAILY = "https://finance.naver.com/marketindex/exchangeDailyQuote.naver?marketindexCd=FX_%sKRW&page=%d";
 
+
+    // 데이터 1건 추가 (가령 Map<String, String>형 환율 데이터)
+    public void saveRealtimeData(Map<String, String> newData) {
+        redisTemplate.opsForList().leftPush(REDIS_KEY, newData);     // 최신 데이터 앞에 추가
+        redisTemplate.opsForList().trim(REDIS_KEY, 0, 9);            // 10개만 남기기
+    }
+
+    /**
+     * 실시간 환율 데이터 크롤링
+     * 크롤링 후 redis 캐싱
+     */
     public List<Map<String, String>> crawlRealtimeRate() throws IOException {
 
         Document doc = Jsoup.connect(URL_REALTIME).userAgent("Mozilla/5.0").get();
@@ -57,10 +75,22 @@ public class ExchangeRateCrawlerService {
             exchangeList.add(rateData);
 
         } // end for
+
+        // 크롤링 끝난 후 캐시에 저장 (ex: TTL 3분)
+        redisTemplate.opsForValue().set(REDIS_KEY, exchangeList, Duration.ofMinutes(3));
         return exchangeList;
     }
 
+    /** Redis에서 환율정보 직접 조회 **/
+    public List<Map<String, String>> getRealtimeRateFromCache() {
+        return (List<Map<String, String>>) redisTemplate.opsForValue().get(REDIS_KEY);
+    }
 
+
+    /**
+     * 과거 데이터 크롤링
+     * page기반으로 가져옴(10개씩)
+     */
     public List<Map<String, String>> crawlDailyRate(String currencyCode, int page) throws IOException {
 
         String url = String.format(URL_DAILY, currencyCode, page);

@@ -23,21 +23,27 @@ public class ExchangeRateController {
     private final ExchangeRateService exchangeRateService;
     private final ExchangeRateCrawlerService exchangeRateCrawlerService;
 
-
     /**
      * 실시간 환율 데이터 조회
      */
-    // @GetMapping 메서드에 ResponseEntity를 붙이면 HTTP 상태 코드, 헤더 등을 더 명확히 제어
     @GetMapping("/real-time")
     @Operation(summary = "실시간 환율 데이터 조회(네이버 환율 크롤링)")
     public ResponseEntity<List<Map<String, String>>> getExchangeRates() {
+
+        // 캐시에 값이 있으면 우선 반환
+        List<Map<String, String>> cached = exchangeRateCrawlerService.getRealtimeRateFromCache();
+        if (cached != null && !cached.isEmpty()) {
+            System.out.println("jjhdebug: from cache");
+            return ResponseEntity.ok(cached);
+        }
+        // 없으면 크롤링 후 캐시에 저장
         try {
             List<Map<String, String>> exchangeRates = exchangeRateCrawlerService.crawlRealtimeRate();
-            return ResponseEntity.ok(exchangeRates);  // HTTP 200 OK
+            System.out.println("jjhdebug: from crawling");
+            return ResponseEntity.ok(exchangeRates);
         } catch (IOException e) {
-            // 에러 로그
             // log.error("환율 데이터 크롤링 실패", e);
-            return ResponseEntity.internalServerError().build();  // HTTP 500
+            return ResponseEntity.internalServerError().build();
         }
     }
 
