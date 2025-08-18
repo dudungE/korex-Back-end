@@ -31,7 +31,12 @@ public enum ErrorCode {
     EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "A009", "이메일 인증이 완료되지 않았습니다."),
 
     // Role (RXXX)
-    ROLE_NOT_FOUND(HttpStatus.NOT_FOUND, "R001", "역할을 찾을 수 없습니다.");
+    ROLE_NOT_FOUND(HttpStatus.NOT_FOUND, "R001", "역할을 찾을 수 없습니다."),
+
+
+    // Balance
+    INSUFFICIENT_BALANCE(HttpStatus.BAD_REQUEST,"B001", "잔액이 부족합니다."),
+    NOT_FOUND(HttpStatus.NOT_FOUND, "B002", "해당 통화가 없습니다.");
 
     private final HttpStatus status;
     private final String code;

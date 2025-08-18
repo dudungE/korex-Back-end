@@ -33,5 +33,5 @@ public class TransferExecutionRequestDto {
     // 4자리 비밀번호로 수정
     @NotBlank(message = "거래 비밀번호를 입력해주세요")
     @Pattern(regexp = "^[0-9]{4}$", message = "거래 비밀번호는 4자리 숫자여야 합니다")
-    private int transactionPassword;
+    private String transactionPassword;
 }

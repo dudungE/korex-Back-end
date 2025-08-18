@@ -3,6 +3,7 @@ package com.project.korex.common.advice;
 import com.project.korex.auth.exception.*;
 import com.project.korex.common.code.ErrorCode;
 import com.project.korex.common.dto.ErrorResponseDto;
+import com.project.korex.common.exception.InsufficientBalanceException;
 import com.project.korex.common.exception.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -50,7 +51,8 @@ public class GlobalExceptionHandler {
             TokenNotFoundException.class,
             VerificationTokenNotFoundException.class,
             InvalidVerificationCodeException.class,
-            EmailNotVerifiedException.class
+            EmailNotVerifiedException.class,
+            InsufficientBalanceException.class
     })
     public ResponseEntity<ErrorResponseDto> handleBadRequestException(RuntimeException ex, HttpServletRequest request) {
         ErrorCode errorCode = getErrorCodeFromException(ex);

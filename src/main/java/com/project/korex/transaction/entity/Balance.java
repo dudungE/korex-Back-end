@@ -46,4 +46,13 @@ public class Balance {
         this.heldAmount = heldAmount;
         this.accountType = accountType;
     }
+
+    public void increase(BigDecimal amount) {
+        this.availableAmount = this.availableAmount.add(amount);
+    }
+    public void decrease(BigDecimal amount) {
+        this.availableAmount = this.availableAmount.subtract(amount);
+        if (this.availableAmount.signum() < 0)
+            throw new IllegalStateException("잔액 음수 불가");
+    }
 }

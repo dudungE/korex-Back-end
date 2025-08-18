@@ -51,7 +51,7 @@ public class Users extends BaseEntity {
     private List<RefreshToken> refreshTokens = new ArrayList<>();
 
     @Builder
-    private Users(String loginId, String password, String name, String email, String phone, String birth, String krwAccount, String foreignAccount, int transactionPassword, Role role) {
+    private Users(String loginId, String password, String name, String email, String phone, String birth, String krwAccount, String foreignAccount, String transactionPassword, Role role) {
         this.loginId = loginId;
         this.password = password;
         this.name = name;

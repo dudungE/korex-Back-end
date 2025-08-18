@@ -6,6 +6,7 @@ import com.project.korex.common.exception.UserNotFoundException;
 import com.project.korex.exchangeRate.service.ExchangeRateService;
 import com.project.korex.transaction.dto.request.TransferExecutionRequestDto;
 import com.project.korex.transaction.dto.request.TransferCalculationRequestDto;
+import com.project.korex.transaction.dto.response.CrossRateDetailsDto;
 import com.project.korex.transaction.dto.response.RecipientResponseDto;
 import com.project.korex.transaction.dto.response.TransferCalculationResponseDto;
 import com.project.korex.transaction.dto.response.TransferExecutionResponseDto;
@@ -38,48 +39,85 @@ public class TransferService {
     private final PasswordEncoder passwordEncoder;
 
     // 송금 계산
+    // 송금 계산 (한국 규정 적용)
     public TransferCalculationResponseDto calculateTransfer(TransferCalculationRequestDto request) {
 
         String fromCurrency = request.getFromCurrencyCode();
         String toCurrency = request.getToCurrencyCode();
         BigDecimal sendAmount = request.getSendAmount();
 
+        // 실시간 환율 조회
         BigDecimal exchangeRate = exchangeRateService.getTransferRate(fromCurrency, toCurrency);
-        // 환율 조회
-//        BigDecimal exchangeRate = exchangeRateService.getCurrentRate(
-//                request.getFromCurrencyCode(),
-//                request.getToCurrencyCode()
-//        );
 
         // 받을 금액 계산
-        BigDecimal receiveAmount = sendAmount.multiply(exchangeRate).setScale(2, RoundingMode.HALF_UP);
-
-        // 수수료 계산 (같은 통화: 0%, 다른 통화: 0.1%)
-        BigDecimal feeRate = request.getFromCurrencyCode().equals(request.getToCurrencyCode())
-                ? BigDecimal.ZERO
-                : new BigDecimal("0.001");
-        BigDecimal feeAmount = request.getSendAmount().multiply(feeRate);
+        BigDecimal receiveAmount = sendAmount.multiply(exchangeRate)
+                .setScale(2, RoundingMode.HALF_UP);
 
         // 수수료 계산 (교차 거래시 추가 수수료)
-//        BigDecimal feeAmount = calculateTransferFee(fromCurrency, toCurrency, sendAmount);
+        BigDecimal feeAmount = calculateTransferFee(fromCurrency, toCurrency, sendAmount);
 
         // 총 차감 금액
         BigDecimal totalDeducted = sendAmount.add(feeAmount);
 
         // 거래 타입 결정
-//        String transferType = determineTransferType(fromCurrency, toCurrency);
-
-        // 전송 타입 결정
-        String transferType = request.getFromCurrencyCode().equals(request.getToCurrencyCode())
-                ? "DIRECT" : "EXCHANGE";
+        String transferType = determineTransferType(fromCurrency, toCurrency);
 
         return TransferCalculationResponseDto.builder()
-                .sendAmount(request.getSendAmount())
-//                .receiveAmount(receiveAmount)
-//                .exchangeRateApplied(exchangeRate)
+                .sendAmount(sendAmount)
+                .receiveAmount(receiveAmount)
+                .exchangeRateApplied(exchangeRate)
                 .feeAmount(feeAmount)
                 .totalDeductedAmount(totalDeducted)
-                .crossRateDetails(getCrossRateDetails(fromCurrency, toCurrency))
+//                .transferType(transferType)
+//                .calculatedAt(LocalDateTime.now())
+                .crossRateDetailsDto(getCrossRateDetails(fromCurrency, toCurrency)) // 교차 환율 상세
+                .build();
+    }
+
+    // 송금 수수료 계산 (교차 거래 고려)
+    private BigDecimal calculateTransferFee(String fromCurrency, String toCurrency, BigDecimal amount) {
+        if (fromCurrency.equals(toCurrency)) {
+            // 같은 통화 송금: 무료
+            return BigDecimal.ZERO;
+        }
+
+        if ("KRW".equals(fromCurrency) || "KRW".equals(toCurrency)) {
+            // 직접 거래 (KRW 포함): 0.1% 수수료
+            return amount.multiply(new BigDecimal("0.001"))
+                    .setScale(2, RoundingMode.HALF_UP);
+        }
+
+        // 교차 거래 (외화 → 외화): 0.2% 수수료 (2번 거래하므로)
+        return amount.multiply(new BigDecimal("0.002"))
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    // 거래 타입 결정
+    private String determineTransferType(String fromCurrency, String toCurrency) {
+        if (fromCurrency.equals(toCurrency)) {
+            return "DIRECT";
+        } else if ("KRW".equals(fromCurrency) || "KRW".equals(toCurrency)) {
+            return "EXCHANGE";
+        } else {
+            return "CROSS_EXCHANGE"; // 교차 환전
+        }
+    }
+
+    // 교차 환율 상세 정보
+    private CrossRateDetailsDto getCrossRateDetails(String fromCurrency, String toCurrency) {
+        if ("KRW".equals(fromCurrency) || "KRW".equals(toCurrency) || fromCurrency.equals(toCurrency)) {
+            return null; // 직접 거래는 상세 정보 없음
+        }
+
+        BigDecimal fromToKrw = exchangeRateService.getTransferRate(fromCurrency, "KRW");
+        BigDecimal krwToTo = exchangeRateService.getTransferRate("KRW", toCurrency);
+
+        return CrossRateDetailsDto.builder()
+                .step1Rate(fromToKrw)           // USD → KRW
+                .step1Description(fromCurrency + " → KRW")
+                .step2Rate(krwToTo)             // KRW → EUR
+                .step2Description("KRW → " + toCurrency)
+                .finalRate(fromToKrw.multiply(krwToTo))
                 .build();
     }
 
