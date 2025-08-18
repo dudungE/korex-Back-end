@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -27,7 +28,7 @@ public class ExchangeRateController {
      * 실시간 환율 데이터 조회
      */
     @GetMapping("/real-time")
-    @Operation(summary = "실시간 환율 데이터 조회(네이버 환율 크롤링)")
+    @Operation(summary = "실시간 환율 데이터 조회(redis데이터 or 네이버 환율 크롤링)")
     public ResponseEntity<List<Map<String, String>>> getExchangeRates() {
 
         // 캐시에 값이 있으면 우선 반환
@@ -77,6 +78,17 @@ public class ExchangeRateController {
             @PathVariable String currencyCode) {
 
         return exchangeRateService.getExchangeRatesByCurrencyOrderedByDate(currencyCode);
+    }
+
+    /** Redis: 특정 통화코드의 최신 N개(기본 10개) 조회 */
+    @GetMapping("/realtime/{currencyCode}")
+    @Operation(summary = "Redis에서 특정 통화의 최근 실시간 데이터 조회")
+    public ResponseEntity<List<Map<String, String>>> getRealtimeByCurrency(
+            @PathVariable String currencyCode
+    ) {
+        // 서비스에 통화별 캐시 조회 메서드가 있어야 함: getRealtimeCurrencyRateFromCache(currencyCode)
+        List<Map<String, String>> list = exchangeRateCrawlerService.getRealtimeCurrencyRateFromCache(currencyCode);
+        return ResponseEntity.ok(list == null ? Collections.emptyList() : list);
     }
 
 }
