@@ -17,6 +17,7 @@ public class SendCodeRequest {
     @Email
     private String email;
 
+    @Builder.Default
     @NotBlank
-    private String purpose;
+    private String purpose = "SIGN_UP";
 }

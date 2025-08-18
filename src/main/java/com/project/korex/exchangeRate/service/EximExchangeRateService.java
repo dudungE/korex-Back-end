@@ -22,10 +22,10 @@ import java.util.List;
 @Component
 public class EximExchangeRateService {
 
-    @Value("${exchange-authkey}")
+    @Value("9SG123")
     private String authkey;
 
-    @Value("${exchange-data}")
+    @Value("A123")
     private String data;
 
     WebClient webClient;

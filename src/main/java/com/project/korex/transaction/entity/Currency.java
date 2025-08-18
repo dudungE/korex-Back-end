@@ -13,8 +13,7 @@ import lombok.NoArgsConstructor;
 public class Currency {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(unique = true)
+    @Column(length = 3, unique = true)
     private String code;
 
     @Column(name = "currency_name")

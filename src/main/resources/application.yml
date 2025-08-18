@@ -15,8 +15,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ghyunjin0913@gmail.com # ${MAIL_USERNAME}  # 보내는 이메일
-    password: 1234 # ${MAIL_PASSWORD}  # 앱 비밀번호
+    username: ${MAIL_USERNAME}  # 보내는 이메일
+    password: ${MAIL_PASSWORD}  # 앱 비밀번호
     properties:
       mail:
         smtp:
@@ -29,8 +29,8 @@ spring:
       sender:
         host: smtp.gmail.com
         port: 587
-        username: ghyunjin0913@gmail.com # ${MAIL_USERNAME}
-        password: 1234 # ${MAIL_PASSWORD}
+        username: ${MAIL_USERNAME}
+        password: ${MAIL_PASSWORD}
         ssl:
           enable: false
 
@@ -39,7 +39,7 @@ spring:
   # JPA & Hibernate 설정
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     properties:
       hibernate:
         show_sql: true
