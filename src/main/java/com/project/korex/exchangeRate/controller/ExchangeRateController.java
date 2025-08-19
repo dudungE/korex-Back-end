@@ -26,6 +26,7 @@ public class ExchangeRateController {
 
     /**
      * 실시간 환율 데이터 조회
+     * 크롤링 이후 redis 캐시에 저장한 값 보내줌
      */
     @GetMapping("/real-time")
     @Operation(summary = "실시간 환율 데이터 조회(redis데이터 or 네이버 환율 크롤링)")
@@ -52,7 +53,7 @@ public class ExchangeRateController {
      * 특정 날짜에 여러 통화코드 환율 조회
      */
     @GetMapping("/by-date")
-    @Operation(summary = "특정 날짜에 여러 통화코드 환율 조회(PostgreSQL DataBase)")
+    @Operation(summary = "특정 날짜에 여러 통화코드 환율 조회(DataBase)")
     public List<ExchangeRateDto> getRatesByDateAndCurrencies(
 //            @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date)
             @RequestParam("date") String dateStr) {
@@ -73,14 +74,14 @@ public class ExchangeRateController {
      * 특정 통화코드에 대한 일자별 환율 조회
      */
     @GetMapping("/by-currency/{currencyCode}")
-    @Operation(summary = "특정 통화코드에 대한 일자별 환율 조회(PostgreSQL DataBase)")
+    @Operation(summary = "특정 통화코드에 대한 일자별 환율 조회(DataBase)")
     public List<ExchangeRateDto> getRatesByCurrencyOrderedByDate(
             @PathVariable String currencyCode) {
 
         return exchangeRateService.getExchangeRatesByCurrencyOrderedByDate(currencyCode);
     }
 
-    /** Redis: 특정 통화코드의 최신 N개(기본 10개) 조회 */
+    /** Redis: 특정 통화코드의 최신 N개(기본 50개) 조회 */
     @GetMapping("/realtime/{currencyCode}")
     @Operation(summary = "Redis에서 특정 통화의 최근 실시간 데이터 조회")
     public ResponseEntity<List<Map<String, String>>> getRealtimeByCurrency(
