@@ -123,7 +123,7 @@ public class AuthService {
                     message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
 
             helper.setTo(to);
-            helper.setSubject("[Korex] 이메일 인증 코드");
+            helper.setSubject(subject);
             helper.setText(html, true); // HTML
             helper.setFrom(new InternetAddress("ghyunjin0913@gmail.com", "Korex")); // 발신자명
 
@@ -142,13 +142,19 @@ public class AuthService {
         // 아이디 중복 검증
         String loginId = joinRequestDto.getLoginId();
         if (userJpaRepository.existsByLoginId(loginId)) {
-            throw new PasswordMismatchException(ErrorCode.DUPLICATE_LOGIN_ID);
+            throw new DuplicateLoginIdException(ErrorCode.DUPLICATE_LOGIN_ID);
         }
 
-        String email = joinRequestDto.getEmail();
         // 이메일 중복 검증
+        String email = joinRequestDto.getEmail();
         if (userJpaRepository.existsByEmail(email)) {
             throw new DuplicateEmailException(ErrorCode.DUPLICATE_EMAIL);
+        }
+
+        // 휴대폰 번호 중복 검증
+        String phone = joinRequestDto.getPhone();
+        if (userJpaRepository.existsByPhone(phone)) {
+            throw new DuplicatePhoneException(ErrorCode.DUPLICATE_PHONE);
         }
         // 가입 검증 시
         assertVerified(email, VerificationPurpose.SIGN_UP);
@@ -179,17 +185,27 @@ public class AuthService {
         Users findUser = userJpaRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
 
-
         // 비밀번호 검증
         if (!passwordEncoder.matches(loginRequestDto.getPassword(), findUser.getPassword())) {
             throw new LoginFailedException(ErrorCode.PASSWORD_MISMATCH);
         }
 
+        boolean emailVerified = false;
+        String email = findUser.getEmail();
+        if (email != null && !email.isBlank()) {
+            emailVerified = tokenRepository
+                    .existsByEmailAndPurposeAndVerifiedTrue(email, VerificationPurpose.SIGN_UP);
+        }
+
+        List<String> authorities = new ArrayList<>();
+        authorities.add(findUser.getRole().getRoleName());
+        if (emailVerified) authorities.add("VERIFIED");
+
         // 액세스 토큰 생성
-        String accessToken = jwtProvider.createAccessToken(findUser.getLoginId(), findUser.getRole().getRoleName());
+        String accessToken  = jwtProvider.createAccessToken(findUser.getLoginId(), authorities);
 
         // 리프레시 토큰 생성
-        String refreshToken = jwtProvider.createRefreshToken(findUser.getLoginId(), findUser.getRole().getRoleName());
+        String refreshToken = jwtProvider.createRefreshToken(findUser.getLoginId(), authorities);
 
         // 리프레시 토큰의 만료 시간
         LocalDateTime refreshTokenExpireTime = LocalDateTime.now().plusSeconds(JwtProvider.REFRESH_TOKEN_EXPIRE_TIME / 1000);
@@ -207,7 +223,8 @@ public class AuthService {
         // 사용자 정보 생성
         UserInfoDto userInfo = new UserInfoDto(
                 findUser.getLoginId(),
-                findUser.getRole().getRoleName()
+                findUser.getRole().getRoleName(),
+                emailVerified
         );
 
         Map<String, Object> authData = new HashMap<>();
@@ -228,7 +245,6 @@ public class AuthService {
     }
 
     public void resetPasswordAfterVerify(String email, String code, String newPassword) {
-        // 이메일 인증 코드 검증 (목적: RESET_PASSWORD)
         verifyCode(email, code, VerificationPurpose.RESET_PASSWORD);
 
         Users user = userJpaRepository.findByEmail(email)
@@ -238,8 +254,6 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(newPassword));
         userJpaRepository.save(user);
     }
-
-
 
     public void logout(String refreshToken) {
         // 토큰 찾고 있으면 제거
@@ -264,16 +278,29 @@ public class AuthService {
 
         // 토큰에서 사용자 정보(loginId, role) 추출 및 검증(위에서 진행하긴 했음)
         String loginId = jwtProvider.getLoginId(refreshToken);
-        String role = jwtProvider.getRole(refreshToken);
+        //String role = jwtProvider.getRole(refreshToken);
 
         // 리프레시 토큰 엔티티 저장하기 위해 추출
         Users findUser = userJpaRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
 
+        // 이메일 인증 여부
+        boolean emailVerified = false;
+        String email = findUser.getEmail();
+        if (email != null && !email.isBlank()) {
+            emailVerified = tokenRepository
+                    .existsByEmailAndPurposeAndVerifiedTrue(email, VerificationPurpose.SIGN_UP);
+        }
+
+        String role = findUser.getRole().getRoleName(); // 예: ROLE_USER
+        List<String> authorities = new ArrayList<>();
+        authorities.add(role);
+        if (emailVerified) authorities.add("VERIFIED");
+
         // 새로운 액세스 토큰 생성
-        String newAccessToken = jwtProvider.createAccessToken(loginId, role);
+        String newAccessToken = jwtProvider.createAccessToken(loginId, authorities);
         // 새로운 리프레시 토큰 생성
-        String newRefreshToken = jwtProvider.createRefreshToken(loginId, role);
+        String newRefreshToken = jwtProvider.createRefreshToken(loginId, authorities);
         // 만료시간(DB저장 용)
         LocalDateTime refreshTokenExpireTime = LocalDateTime.now().plusSeconds(JwtProvider.REFRESH_TOKEN_EXPIRE_TIME / 1000);
 

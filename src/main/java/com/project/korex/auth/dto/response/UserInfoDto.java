@@ -14,5 +14,8 @@ public class UserInfoDto {
     @Schema(description = "사용자 역할", example = "ROLE_USER", required = true)
     private String role;
 
+    private Boolean emailVerified;
+
+
 
 }

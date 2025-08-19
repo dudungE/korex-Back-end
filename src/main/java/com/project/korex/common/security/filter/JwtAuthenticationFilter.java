@@ -4,18 +4,26 @@ import com.project.korex.common.security.jwt.JwtProvider;
 import com.project.korex.common.security.service.CustomUserDetailsService;
 import com.project.korex.common.security.user.CustomUserPrincipal;
 import com.project.korex.common.util.CookieUtil;
+import com.project.korex.user.enums.VerificationPurpose;
+import com.project.korex.user.repository.jpa.EmailVerificationTokenRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -24,11 +32,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtProvider jwtProvider;
     private final CustomUserDetailsService customUserDetailsService;
     private final CookieUtil cookieUtil;
+    private final EmailVerificationTokenRepository emailVerificationTokenRepository;
 
-    public JwtAuthenticationFilter(JwtProvider jwtProvider, CustomUserDetailsService customUserDetailsService, CookieUtil cookieUtil) {
+    public JwtAuthenticationFilter(JwtProvider jwtProvider, CustomUserDetailsService customUserDetailsService, CookieUtil cookieUtil, EmailVerificationTokenRepository emailVerificationTokenRepository) {
         this.jwtProvider = jwtProvider;
         this.customUserDetailsService = customUserDetailsService;
         this.cookieUtil = cookieUtil;
+        this.emailVerificationTokenRepository = emailVerificationTokenRepository;
     }
 
     @Override
@@ -37,8 +47,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String uri = request.getRequestURI();
 
         // 인증이 필요 없는 경로는 필터 건너뜀
-        if (uri.startsWith("/api/auth/verify") || uri.startsWith("/api/auth/join")
-                || uri.startsWith("/api/auth/send-verification-email")) {
+        if (uri.startsWith("/api/auth/send-code") || uri.startsWith("/api/auth/join")
+                || uri.startsWith("/api/auth/verify-code")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -65,8 +75,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             CustomUserPrincipal userDetails = (CustomUserPrincipal) customUserDetailsService.loadUserByUsername(loginId);
 
             if (userDetails != null) {
-                Authentication authentication =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                boolean emailVerified = false;
+                String email = userDetails.getEmail();
+                if (email != null && !email.isBlank()) {
+                    emailVerified = emailVerificationTokenRepository
+                            .existsByEmailAndPurposeAndVerifiedTrue(email, VerificationPurpose.SIGN_UP);
+                }
+
+                List<GrantedAuthority> authorities = new ArrayList<>(userDetails.getAuthorities());
+                if (emailVerified) {
+                    authorities.add(new SimpleGrantedAuthority("VERIFIED"));
+                }
+
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+//                Authentication authentication =
+//                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 
                 // SecurityContext에 Authentication 객체를 저장
                 SecurityContextHolder.getContext().setAuthentication(authentication);

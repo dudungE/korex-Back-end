@@ -1,6 +1,7 @@
 package com.project.korex.common.security.jwt;
 
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.WeakKeyException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -8,7 +9,9 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -21,6 +24,9 @@ public class JwtProvider {
     public static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 14; // 14일
 
     public JwtProvider(@Value("${spring.jwt.secret}") String secret) {
+        if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new WeakKeyException("spring.jwt.secret must be at least 32 bytes for HS256");
+        }
         this.secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), Jwts.SIG.HS256.key().build().getAlgorithm());
     }
 
@@ -32,13 +38,32 @@ public class JwtProvider {
         return parseClaims(token).get("role", String.class);
     }
 
-    public String createAccessToken(String loginId, String role) {
-        return createToken(loginId, role, ACCESS_TOKEN_EXPIRE_TIME);
+    @SuppressWarnings("unchecked")
+    public List<String> getAuthorities(String token) {
+        Object raw = parseClaims(token).get("authorities");
+        if (raw instanceof List<?> list) {
+            return list.stream().map(String::valueOf).toList();
+        }
+        if (raw instanceof String s) {
+            // 혹시 문자열로 저장됐다면 콤마 분리 fallback
+            return Arrays.stream(s.split(",")).map(String::trim).filter(t -> !t.isEmpty()).toList();
+        }
+        return List.of();
     }
 
-    public String createRefreshToken(String loginId, String role) {
-        return createToken(loginId, role, REFRESH_TOKEN_EXPIRE_TIME);
+    public boolean getEmailVerified(String token) {
+        Boolean b = parseClaims(token).get("emailVerified", Boolean.class);
+        return Boolean.TRUE.equals(b);
     }
+
+    public String createAccessToken(String loginId, List<String> authorities) {
+        return createToken(loginId, authorities, ACCESS_TOKEN_EXPIRE_TIME);
+    }
+
+    public String createRefreshToken(String loginId, List<String> authorities) {
+        return createToken(loginId, authorities, REFRESH_TOKEN_EXPIRE_TIME);
+    }
+
 
     private Claims parseClaims(String token) {
         return Jwts.parser()
@@ -49,10 +74,20 @@ public class JwtProvider {
     }
 
     // 토큰 생성 로직 공통화
-    private String createToken(String loginId, String role, Long expiredMs) {
+    private String createToken(String loginId, List<String> authorities, long expiredMs) {
+        List<String> auths = authorities == null ? List.of() : authorities;
+        boolean emailVerified = auths.contains("VERIFIED");
+        // legacy 호환을 위해 role도 유지(첫 번째 ROLE_* 또는 null)
+        String role = auths.stream()
+                .filter(a -> a != null && a.startsWith("ROLE_"))
+                .findFirst()
+                .orElse(null);
+
         return Jwts.builder()
                 .claim("loginId", loginId)
                 .claim("role", role)
+                .claim("authorities", auths)
+                .claim("emailVerified", emailVerified)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expiredMs))
                 .signWith(secretKey)
