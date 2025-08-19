@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TransferExecutionRequestDto {
+public class TransferRequestDto {
 
     @NotBlank(message = "수취인 전화번호를 입력해주세요")
     @Pattern(regexp = "^01[0-9]-?[0-9]{4}-?[0-9]{4}$", message = "올바른 휴대폰 번호 형식이 아닙니다")

@@ -4,15 +4,13 @@ import com.project.korex.common.BaseEntity;
 import com.project.korex.transaction.enums.TransactionType;
 import com.project.korex.user.entity.Users;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 
 @Entity
 @Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder

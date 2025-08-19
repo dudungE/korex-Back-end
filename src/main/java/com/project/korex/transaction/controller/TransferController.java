@@ -1,45 +1,38 @@
 package com.project.korex.transaction.controller;
 
-import com.project.korex.transaction.dto.request.TransferCalculationRequestDto;
-import com.project.korex.transaction.dto.request.TransferExecutionRequestDto;
-import com.project.korex.transaction.dto.response.RecipientResponseDto;
-import com.project.korex.transaction.dto.response.TransferCalculationResponseDto;
-import com.project.korex.transaction.dto.response.TransferExecutionResponseDto;
+import com.project.korex.transaction.dto.request.TransferRequestDto;
+import com.project.korex.transaction.dto.response.TransferResponseDto;
+import com.project.korex.transaction.entity.Currency;
+import com.project.korex.transaction.repository.CurrencyRepository;
 import com.project.korex.transaction.service.TransferService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/transfer")
 @RequiredArgsConstructor
+//@CrossOrigin(origins = "*")
 public class TransferController {
 
     private final TransferService transferService;
+    private final CurrencyRepository currencyRepository;
 
-    // 송금 금액 계산
-    @PostMapping("/calculate")
-    public ResponseEntity<TransferCalculationResponseDto> calculateTransfer(
-            @RequestBody TransferCalculationRequestDto request) {
-        TransferCalculationResponseDto calculation = transferService.calculateTransfer(request);
-        return new ResponseEntity<>(calculation,HttpStatus.OK);
+    @GetMapping("/currencies")
+    public ResponseEntity<List<Currency>> getSupportedCurrencies() {
+        List<Currency> currencies = currencyRepository.findAllByOrderByCode();
+        return new ResponseEntity<>(currencies, HttpStatus.OK);
     }
 
-    // 친구간 송금 실행
     @PostMapping("/execute")
-    public ResponseEntity<TransferExecutionResponseDto> executeTransfer(
-            @RequestBody @Valid TransferExecutionRequestDto request) {
-        TransferExecutionResponseDto response = transferService.executeTransfer(request);
-        return ResponseEntity.ok(response);
-    }
+    public ResponseEntity<TransferResponseDto> executeTransfer(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestBody TransferRequestDto request) {
 
-
-    // 수취인 검색
-    @GetMapping("/recipient/search")
-    public ResponseEntity<RecipientResponseDto> searchRecipient(@RequestParam String phone) {
-        RecipientResponseDto recipient = transferService.findRecipientByPhone(phone);
-        return new ResponseEntity<>(recipient, HttpStatus.OK);
+        TransferResponseDto response = transferService.executeTransfer(userId, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

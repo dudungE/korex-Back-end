@@ -60,6 +60,7 @@ public class SecurityConfig {
                                 "/api/auth/send-code", "/api/auth/verify-code", "/api/auth/find-id", "/api/auth/reset-password", "/connect", "/connect/**").permitAll()
 
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api/balance/**", "/api/transfer/currencies", "/api/transfer/execute", "/api/transfer/currencies").permitAll()
                         .anyRequest().authenticated());
         http
                 .sessionManagement((session) -> session

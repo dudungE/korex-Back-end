@@ -40,7 +40,7 @@ public class Users extends BaseEntity {
     @Column(name = "foreign_account", nullable = false, length = 15)
     private String foreignAccount;
 
-    @Column(name = "transaction_password", nullable = false, length = 4)
+    @Column(name = "transaction_password", length = 4)
     private String transactionPassword;
 
     @ManyToOne(fetch = FetchType.LAZY)

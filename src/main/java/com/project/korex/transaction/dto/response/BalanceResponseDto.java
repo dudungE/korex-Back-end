@@ -1,17 +1,46 @@
 package com.project.korex.transaction.dto.response;
 
-import lombok.Builder;
+import com.project.korex.transaction.entity.Balance;
+import com.project.korex.transaction.entity.Currency;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
+import java.util.Map;
 
 @Data
-@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class BalanceResponseDto {
+    private String code;
+    private String amount;
+    private String name;
+    private String flag;
 
-    private String currencyCode;
-    private BigDecimal availableAmount;
-    private BigDecimal heldAmount;
-    private String accountType;
-    private String displayAmount;
+    public static BalanceResponseDto from(Balance balance, Currency currency) {
+        return new BalanceResponseDto(
+                balance.getCurrency().getCode(),
+                formatAmount(balance.getAvailableAmount()),
+                currency.getCurrencyName(),
+                getFlagForCountry(currency.getCountryName())
+        );
+    }
+
+    private static String formatAmount(BigDecimal amount) {
+        DecimalFormat df = new DecimalFormat("#,##0.00");
+        return df.format(amount);
+    }
+
+    private static String getFlagForCountry(String countryName) {
+        Map<String, String> flags = Map.of(
+                "한국", "🇰🇷",
+                "미국", "🇺🇸",
+                "유럽", "🇪🇺",
+                "일본", "🇯🇵"
+        );
+        return flags.getOrDefault(countryName, "🌍");
+    }
 }
+

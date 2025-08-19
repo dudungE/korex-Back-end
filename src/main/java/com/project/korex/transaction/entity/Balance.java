@@ -6,11 +6,13 @@ import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 
 @Entity
 @Getter
+@Setter
 @NoArgsConstructor
 public class Balance {
 
@@ -45,14 +47,5 @@ public class Balance {
         this.availableAmount = availableAmount;
         this.heldAmount = heldAmount;
         this.accountType = accountType;
-    }
-
-    public void increase(BigDecimal amount) {
-        this.availableAmount = this.availableAmount.add(amount);
-    }
-    public void decrease(BigDecimal amount) {
-        this.availableAmount = this.availableAmount.subtract(amount);
-        if (this.availableAmount.signum() < 0)
-            throw new IllegalStateException("잔액 음수 불가");
     }
 }
