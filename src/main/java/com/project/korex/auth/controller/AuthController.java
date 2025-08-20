@@ -26,6 +26,7 @@ import org.springframework.messaging.MessagingException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -57,7 +58,8 @@ public class AuthController {
     }
 
     @PostMapping("/send-code")
-    public ResponseEntity<?> sendCode(@Valid @RequestBody SendCodeRequest req) {
+    public ResponseEntity<?> sendCode(@Valid @RequestBody SendCodeRequest req)
+            throws jakarta.mail.MessagingException, UnsupportedEncodingException {
         authService.sendVerificationCode(req.getEmail(), VerificationPurpose.valueOf(req.getPurpose()));
         return ResponseEntity.ok(Map.of("success", true, "message", "인증 코드가 전송되었습니다."));
     }

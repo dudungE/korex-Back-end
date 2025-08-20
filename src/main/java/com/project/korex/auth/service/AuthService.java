@@ -59,7 +59,8 @@ public class AuthService {
     @Value("${custom.site-host}")
     private String siteHost;
 
-    public void sendVerificationCode(String email, VerificationPurpose purpose) {
+    public void sendVerificationCode(String email, VerificationPurpose purpose)
+            throws MessagingException, UnsupportedEncodingException {
         String code = generateRandomCode();
 
         EmailVerificationToken token = EmailVerificationToken.builder()
@@ -79,7 +80,7 @@ public class AuthService {
                 .orElseThrow(() -> new VerificationTokenNotFoundException(ErrorCode.VERIFICATION_TOKEN_NOT_FOUND));
 
         if (token.getExpiryDate().isBefore(LocalDateTime.now()))
-            throw new TokenExpriedException(ErrorCode.EXPIRED_TOKEN);
+            throw new TokenExpriedException(ErrorCode.TOKEN_EXPIRED);
 
         if (!token.getCode().equals(inputCode))
             throw new InvalidVerificationCodeException(ErrorCode.INVALID_CODE);
@@ -94,43 +95,40 @@ public class AuthService {
                 .orElseThrow(() -> new TokenNotFoundException(ErrorCode.EMAIL_VERIFICATION_NOT_FOUND));
 
         if (!latest.isVerified() || latest.getExpiryDate().isBefore(LocalDateTime.now()))
-            throw new EmailNotVerifiedException(ErrorCode.EMAIL_NOT_VERIFIED);
+            throw new EmailNotVerifiedException(ErrorCode.EMAIL_VERIFICATION_NOT_FOUND);
     }
 
     private String generateRandomCode() {
         return String.format("%06d", random.nextInt(1_000_000));
     }
 
-    private void sendEmail(String to, String code, VerificationPurpose purpose) {
-        try {
-            Context ctx = new Context(Locale.KOREA);
-            ctx.setVariable("brand", "Korex");
-            ctx.setVariable("recipientName", "고객님");
-            ctx.setVariable("minutes", VERIFY_EXPIRE_MINUTES);
-            ctx.setVariable("code", code);
-            ctx.setVariable("supportEmail", "support@korex.com");
+    private void sendEmail(String to, String code, VerificationPurpose purpose)
+            throws MessagingException, UnsupportedEncodingException {
+        Context ctx = new Context(Locale.KOREA);
+        ctx.setVariable("brand", "Korex");
+        ctx.setVariable("recipientName", "고객님");
+        ctx.setVariable("minutes", VERIFY_EXPIRE_MINUTES);
+        ctx.setVariable("code", code);
+        ctx.setVariable("supportEmail", "support@korex.com");
 
-            String subject = (purpose == VerificationPurpose.SIGN_UP)
-                    ? "[Korex] 이메일 인증 코드"
-                    : "[Korex] 비밀번호 재설정 인증 코드";
-            String template = "email-verification";
+        String subject = (purpose == VerificationPurpose.SIGN_UP)
+                ? "[Korex] 이메일 인증 코드"
+                : "[Korex] 비밀번호 재설정 인증 코드";
+        String template = "email-verification";
 
-            String html = templateEngine.process(template, ctx);
+        String html = templateEngine.process(template, ctx);
 
-            // 메시지 생성/전송
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(
-                    message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
+        // 메시지 생성/전송
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(
+                message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
 
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(html, true); // HTML
-            helper.setFrom(new InternetAddress("ghyunjin0913@gmail.com", "Korex")); // 발신자명
+        helper.setTo(to);
+        helper.setSubject(subject);
+        helper.setText(html, true); // HTML
+        helper.setFrom(new InternetAddress("ghyunjin0913@gmail.com", "Korex")); // 발신자명
 
-            mailSender.send(message);
-        } catch (MessagingException | UnsupportedEncodingException e) {
-            throw new RuntimeException("이메일 전송에 실패했습니다.", e);
-        }
+        mailSender.send(message);
     }
 
     public void joinMember(JoinRequestDto joinRequestDto) {
