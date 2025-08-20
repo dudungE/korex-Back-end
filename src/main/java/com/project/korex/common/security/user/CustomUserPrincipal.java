@@ -61,7 +61,7 @@ public class CustomUserPrincipal implements UserDetails{
             case "google":
                 return (String) attributes.get("name");
             case "kakao":
-                Map<String, Object> kakaoAccount = (Map<String, Object>)  attributes.get("properties"); //todo 비즈니스 정보 통과가 된다면 kakao_account로 변경
+                Map<String, Object> kakaoAccount = (Map<String, Object>)  attributes.get("properties");
                 return (String) kakaoAccount.get("nickname"); // 추후 name변경
             case "naver":
                 Map<String, Object> response = (Map<String, Object>) attributes.get(attributeKey);
@@ -72,18 +72,7 @@ public class CustomUserPrincipal implements UserDetails{
     }
 
     public String getEmail() {
-        switch (registrationId) {
-            case "google":
-                return (String) attributes.get("email");
-            case "kakao":
-                Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
-                return (String) kakaoAccount.get("email");
-            case "naver":
-                Map<String, Object> response = (Map<String, Object>) attributes.get(attributeKey);
-                return (String) response.get("email");
-            default:
-                return null;
-        }
+        return user.getEmail();
     }
 
     //UserDetails
