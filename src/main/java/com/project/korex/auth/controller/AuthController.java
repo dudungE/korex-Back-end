@@ -91,11 +91,21 @@ public class AuthController {
     @Operation(summary = "인증 상태 확인", description = "현재 로그인된 사용자의 인증 상태를 반환합니다.")
     @GetMapping("/status")
     public ResponseEntity<AuthStatusDto> getAuthStatus(@AuthenticationPrincipal CustomUserPrincipal userDetails) {
-        // 인증 객체 있으면 유저인포 만들어서 리턴
         if (userDetails != null) {
+            String role = null;
+            var auths = userDetails.getAuthorities();
+            if (auths != null && !auths.isEmpty()) {
+                role = auths.iterator().next().getAuthority();
+            }
+
+            // 이메일 인증 여부
+            boolean emailVerified = auths != null && auths.stream()
+                    .anyMatch(a -> "VERIFIED".equals(a.getAuthority()));
+
             UserInfoDto userInfo = new UserInfoDto(
                     userDetails.getName(),
-                    userDetails.getAuthorities().iterator().next().getAuthority()
+                    role,
+                    emailVerified
             );
             return ResponseEntity.ok(new AuthStatusDto(true, userInfo));
         } else {
@@ -118,7 +128,7 @@ public class AuthController {
 
     @Operation(summary = "토큰 재발급", description = "리프레시 토큰을 통해 새로운 액세스 토큰을 발급받습니다.")
     @PostMapping("/token/reissue")
-    public ResponseEntity<String> reissue(HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<Map<String, Object>> reissue(HttpServletRequest request, HttpServletResponse response) {
         log.info("/token reissue = {}", request.getRequestURI());
         // 쿠키에서 리프레시 토큰을 가져옴
         String refreshToken = cookieUtil.getCookie(request, "refreshToken")
@@ -133,7 +143,10 @@ public class AuthController {
         // 쿠키에 새로운 리프레시 토큰 추가
         cookieUtil.addCookie(response, "refreshToken", tokenMap.get("refreshToken"), 60 * 60 * 24 * 14);
 
-        return ResponseEntity.ok("액세스 토큰이 성공적으로 재발급되었습니다.");
+        return ResponseEntity.ok(Map.of(
+                "accessToken", tokenMap.get("accessToken"),
+                "tokenType", "Bearer"
+        ));
     }
 
 
