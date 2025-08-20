@@ -41,6 +41,15 @@ public class TransferService {
             if (!request.getTransactionPassword().equals(fromUser.getTransactionPassword())) {
                 throw new RuntimeException("거래 비밀번호가 일치하지 않습니다");
             }
+
+            if (!toUser.getName().equals(request.getRecipientName())) {
+                throw new RuntimeException("수취인 이름과 전화번호가 일치하지 않습니다");
+            }
+
+            // 자기 자신에게 송금 방지
+            if (fromUser.getId().equals(toUser.getId())) {
+                throw new RuntimeException("본인에게는 송금할 수 없습니다");
+            }
 //            // 숫자만 허용 (필요한 경우)
 //            if (!request.getTransactionPassword().matches("\\d{4}")) {
 //                throw new RuntimeException("거래 비밀번호는 4자리 숫자여야 합니다");

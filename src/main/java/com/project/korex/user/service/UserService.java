@@ -10,6 +10,7 @@ import com.project.korex.common.exception.UserNotFoundException;
 import com.project.korex.user.dto.ChangePasswordRequestDto;
 import com.project.korex.user.dto.MyInfoResponseDto;
 import com.project.korex.user.dto.MyInfoUpdateRequestDto;
+import com.project.korex.user.dto.VerifyRecipientRequestDto;
 import com.project.korex.user.entity.Users;
 import com.project.korex.user.enums.VerificationPurpose;
 import com.project.korex.user.repository.jpa.EmailVerificationTokenRepository;
@@ -117,5 +118,28 @@ public class UserService {
 
         // 5) 세션/토큰 무효화
         refreshTokenRepository.deleteByUser(user); // 보유 중인 리프레시 토큰 전부 폐기
+    }
+
+    // 이름 존재 여부 확인
+    public boolean existsByName(String name) {
+        try {
+            return userJpaRepository.existsByName(name);
+        } catch (Exception e) {
+            log.error("이름 존재 확인 실패: {}", e.getMessage());
+            throw new RuntimeException("사용자 조회 중 오류가 발생했습니다");
+        }
+    }
+
+    // 이름 + 전화번호 매칭 확인
+    public boolean verifyRecipient(VerifyRecipientRequestDto dto) {
+        try {
+            Users user = userJpaRepository.findByPhone(dto.getPhone())
+                    .orElseThrow(() -> new RuntimeException("해당 번호의 사용자를 찾을 수 없습니다"));
+
+            return user.getName().equals(dto.getName());
+        } catch (Exception e) {
+            log.error("수취인 검증 실패: {}", e.getMessage());
+            throw new RuntimeException("수취인 검증 중 오류가 발생했습니다");
+        }
     }
 }

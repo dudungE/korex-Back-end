@@ -4,6 +4,7 @@ import com.project.korex.common.security.user.CustomUserPrincipal;
 import com.project.korex.user.dto.ChangePasswordRequestDto;
 import com.project.korex.user.dto.MyInfoResponseDto;
 import com.project.korex.user.dto.MyInfoUpdateRequestDto;
+import com.project.korex.user.dto.VerifyRecipientRequestDto;
 import com.project.korex.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -52,4 +53,14 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    // 1. 이름 존재 여부 확인
+    @GetMapping("/exists")
+    public boolean existsByName(@RequestParam String name) {
+        return userService.existsByName(name);  // Service 메서드 호출 ✅
+    }
+
+    @PostMapping("/verify-recipient")
+    public boolean verifyRecipient(@RequestBody VerifyRecipientRequestDto dto) {
+        return userService.verifyRecipient(dto);  // Service 메서드 호출 ✅
+    }
 }
