@@ -58,4 +58,16 @@ public class InquiryController {
         InquiryResponse res = inquiryService.getMyInquirySummary(userId, id);
         return ResponseEntity.ok(res);
     }
+
+    /**
+     * 문의 철회(관리자 답변 작성 전)
+     */
+    @PostMapping("/{id}/withdraw")
+    public void withdrawMyInquiry(@AuthenticationPrincipal CustomUserPrincipal principal,
+            @PathVariable Long id) {
+        Long userId = principal.getUser().getId();
+        inquiryService.withdrawMyInquiry(userId, id);
+
+    }
+
 }

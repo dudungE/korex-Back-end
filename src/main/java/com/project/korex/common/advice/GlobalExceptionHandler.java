@@ -4,6 +4,8 @@ import com.project.korex.auth.exception.*;
 import com.project.korex.common.code.ErrorCode;
 import com.project.korex.common.dto.ErrorResponseDto;
 import com.project.korex.common.exception.UserNotFoundException;
+import com.project.korex.support.exception.InquiryWithdrawConflictException;
+import com.project.korex.support.exception.InquiryNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +20,8 @@ public class GlobalExceptionHandler {
     // 404 NOT_FOUND - 리소스를 찾을 수 없음
     @ExceptionHandler({
             UserNotFoundException.class,
-            RoleNotFoundException.class
+            RoleNotFoundException.class,
+            InquiryNotFoundException.class
     })
     public ResponseEntity<ErrorResponseDto> handleNotFoundException(RuntimeException ex, HttpServletRequest request) {
         ErrorCode errorCode = getErrorCodeFromException(ex);
@@ -32,7 +35,8 @@ public class GlobalExceptionHandler {
     // 409 CONFLICT - 중복/충돌
     @ExceptionHandler({
             DuplicateLoginIdException.class,
-            DuplicateEmailException.class
+            DuplicateEmailException.class,
+            InquiryWithdrawConflictException.class
     })
     public ResponseEntity<ErrorResponseDto> handleConflictException(RuntimeException ex, HttpServletRequest request) {
         ErrorCode errorCode = getErrorCodeFromException(ex);

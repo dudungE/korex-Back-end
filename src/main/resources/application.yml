@@ -53,6 +53,7 @@ springdoc:
   api-docs:
     path: /v3/api-docs
   swagger-ui:
+    persist-authorization: true
     path: /swagger-ui.html
 
 custom:

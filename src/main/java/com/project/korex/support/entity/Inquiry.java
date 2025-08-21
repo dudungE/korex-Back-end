@@ -7,14 +7,17 @@ import com.project.korex.user.entity.Users;
 import io.lettuce.core.KillArgs;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Check;
 
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
+@Check(constraints = "status in ('REGISTERED','ANSWERED','WITHDRAW')")
 public class Inquiry extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="inquiry_id")
     private Long id;
 
     @ManyToOne
@@ -31,17 +34,21 @@ public class Inquiry extends BaseEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Column
+    private Boolean deleted = false;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
     private InquiryStatus status = InquiryStatus.REGISTERED;
 
     @Builder
-    public static Inquiry of(Users user, InquiryCategory category, String title, String content) {
+    public static Inquiry of(Users user, InquiryCategory category, String title, String content, Boolean deleted) {
         Inquiry inq = new Inquiry();
         inq.user = user;
         inq.category = category;
         inq.title = title;
         inq.content = content;
+        inq.deleted = deleted;
         inq.status = InquiryStatus.REGISTERED;
         return inq;
     }

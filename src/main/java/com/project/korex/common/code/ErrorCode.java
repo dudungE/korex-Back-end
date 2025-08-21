@@ -30,7 +30,11 @@ public enum ErrorCode {
     EMAIL_VERIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "A007", "이메일 인증 정보가 존재하지 않습니다."),
 
     // Role (RXXX)
-    ROLE_NOT_FOUND(HttpStatus.NOT_FOUND, "R001", "역할을 찾을 수 없습니다.");
+    ROLE_NOT_FOUND(HttpStatus.NOT_FOUND, "R001", "역할을 찾을 수 없습니다."),
+    
+    // Support (SXXX)
+    INQUIRY_NOT_FOUND(HttpStatus.NOT_FOUND, "S001", "문의 내역을 찾을 수 없습니다."),
+    INQUIRY_WITHDRAW_CONFLICT(HttpStatus.CONFLICT, "S002", "문의 철회가 불가능한 상태입니다.");
 
     private final HttpStatus status;
     private final String code;

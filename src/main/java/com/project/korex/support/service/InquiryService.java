@@ -1,8 +1,14 @@
 package com.project.korex.support.service;
 
+import com.project.korex.common.code.ErrorCode;
 import com.project.korex.support.dto.InquiryCreateRequest;
 import com.project.korex.support.dto.InquiryResponse;
 import com.project.korex.support.entity.Inquiry;
+import com.project.korex.support.entity.InquiryAnswer;
+import com.project.korex.support.enums.InquiryStatus;
+import com.project.korex.support.exception.InquiryNotFoundException;
+import com.project.korex.support.exception.InquiryWithdrawConflictException;
+import com.project.korex.support.repository.jpa.InquiryAnswerJpaRepository;
 import com.project.korex.support.repository.jpa.InquiryJpaRepository;
 import com.project.korex.user.entity.Users;
 import com.project.korex.user.repository.jpa.UserJpaRepository;
@@ -18,12 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class InquiryService {
 
     private final InquiryJpaRepository inquiryJpaRepository;
+    private final InquiryAnswerJpaRepository inquiryAnswerJpaRepository;
     private final UserJpaRepository userJpaRepository;
 
-    /**
-     * 문의 등록
-     * @return 생성된 문의 ID
-     */
     @Transactional
     public Long createInquiry(Long userId, InquiryCreateRequest req) {
         Users user = userJpaRepository.getReferenceById(userId);
@@ -52,4 +55,19 @@ public class InquiryService {
                 .orElseThrow(() -> new EntityNotFoundException("Inquiry not found"));
         return InquiryResponse.from(inq);
     }
+
+    @Transactional
+    public void withdrawMyInquiry(Long userId, Long inquiryId) {
+        Inquiry inquiry = inquiryJpaRepository.findByIdAndUserIdForUpdate(inquiryId, userId)
+                .orElseThrow(() -> new InquiryNotFoundException(ErrorCode.INQUIRY_NOT_FOUND));
+
+        // 상태 검증
+        if (Boolean.TRUE.equals(inquiry.getDeleted()) || inquiry.getStatus() != InquiryStatus.REGISTERED) {
+            throw new InquiryWithdrawConflictException(ErrorCode.INQUIRY_WITHDRAW_CONFLICT);
+        }
+
+        inquiry.setStatus(InquiryStatus.WITHDRAW);
+        inquiry.setDeleted(true);
+    }
+
 }
