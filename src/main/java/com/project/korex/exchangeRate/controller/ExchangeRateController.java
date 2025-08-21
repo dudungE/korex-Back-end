@@ -3,6 +3,7 @@ package com.project.korex.exchangeRate.controller;
 import com.project.korex.exchangeRate.dto.ExchangeRateDto;
 import com.project.korex.exchangeRate.service.ExchangeRateCrawlerService;
 import com.project.korex.exchangeRate.service.ExchangeRateService;
+import com.project.korex.exchangeRate.service.NaverNewsApiService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ public class ExchangeRateController {
 
     private final ExchangeRateService exchangeRateService;
     private final ExchangeRateCrawlerService exchangeRateCrawlerService;
+    private final NaverNewsApiService naverNewsApiService;
 
     /**
      * 실시간 환율 데이터 조회
@@ -81,7 +83,9 @@ public class ExchangeRateController {
         return exchangeRateService.getExchangeRatesByCurrencyOrderedByDate(currencyCode);
     }
 
-    /** Redis: 특정 통화코드의 최신 N개(기본 50개) 조회 */
+    /**
+     * Redis: 특정 통화코드의 최신 N개(기본 50개) 조회
+     */
     @GetMapping("/realtime/{currencyCode}")
     @Operation(summary = "Redis에서 특정 통화의 최근 실시간 데이터 조회")
     public ResponseEntity<List<Map<String, String>>> getRealtimeByCurrency(
@@ -91,5 +95,32 @@ public class ExchangeRateController {
         List<Map<String, String>> list = exchangeRateCrawlerService.getRealtimeCurrencyRateFromCache(currencyCode);
         return ResponseEntity.ok(list == null ? Collections.emptyList() : list);
     }
+
+
+    @GetMapping("/main-page-data")
+    @Operation(summary = "메인페이지에 나타낼 최근 실시간 데이터 조회")
+    public ResponseEntity<Map<String, Map<String, String>>> getMainPageData() {
+        // 메인페이지에 표시할 모든 통화들
+        String[] mainCurrencies = {
+                "USD", "JPY", "EUR", "GBP", "CHF", "CAD",
+                "AUD", "NZD", "HKD", "CNY", "SEK", "DKK",
+                "NOK", "THB", "SGD"
+        };
+
+        Map<String, Map<String, String>> ratesData =
+                exchangeRateCrawlerService.getMainPageRatesData(mainCurrencies);
+
+        return ResponseEntity.ok(ratesData);
+    }
+
+    /**
+     * 환율 뉴스 조회 API
+     */
+    @GetMapping("/news")
+    public ResponseEntity<List<Map<String, String>>> getExchangeNews() throws IOException {
+        List<Map<String, String>> news = naverNewsApiService.getLatestExchangeNewsFromApi();
+        return ResponseEntity.ok(news);
+    }
+
 
 }

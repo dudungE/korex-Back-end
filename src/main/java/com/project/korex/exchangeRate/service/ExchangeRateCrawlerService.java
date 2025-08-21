@@ -10,7 +10,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -30,9 +29,14 @@ public class ExchangeRateCrawlerService {
     @Scheduled(fixedRate = 30000)
     public void scheduledCrawlAndCache() {
         try {
+            // 네이버 금융 환율 데이터 크롤링
             List<Map<String, String>> exchangeList = crawlRealtimeRate();
-            // 현재 시간 추가
-            String currentTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+            // REDIS_KEY에 시간제한 없이 저장 (스케줄러에 따라 30초마다 자동 업데이트)
+            redisTemplate.opsForValue().set(REDIS_KEY, exchangeList);
+
+            // 현재 시간 추가 - 실시간 추이 데이터 시간
+            String currentTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
 
             for (Map<String, String> rateData : exchangeList) {
                 String currencyCode = rateData.get("currency_code");
@@ -51,16 +55,15 @@ public class ExchangeRateCrawlerService {
         }
     }
 
-    // 통화코드별 Redis 키 생성 및 데이터 저장 (최신 10개 유지)
+    // 통화코드별 Redis 키 생성 및 데이터 저장 (최신 50개 유지)
     public void saveRealtimeData(String currencyCode, Map<String, String> newData) {
         String redisKey = REDIS_KEY_PREFIX + currencyCode;
         redisTemplate.opsForList().leftPush(redisKey, newData);
-        redisTemplate.opsForList().trim(redisKey, 0, 50);  // 최신 50개만 유지
+        redisTemplate.opsForList().trim(redisKey, 0, 50);  // trim 명령어로 최대 51개씩만 유지
     }
 
     /**
      * 실시간 환율 데이터 크롤링
-     * 크롤링 후 redis 캐싱
      */
     public List<Map<String, String>> crawlRealtimeRate() throws IOException {
 
@@ -96,26 +99,20 @@ public class ExchangeRateCrawlerService {
                 String value = tds.get(i).text().trim();
                 rateData.put(key, value);
             }
-
             exchangeList.add(rateData);
-
         } // end for
-
-        // 크롤링 끝난 후 캐시에 저장 (ex: TTL 3분)
-        redisTemplate.opsForValue().set(REDIS_KEY, exchangeList, Duration.ofMinutes(3));
         return exchangeList;
     }
 
     /**
      * Redis에서 환율정보 직접 조회
      */
-
     // 전체 통화 코드 실시간 조회
     public List<Map<String, String>> getRealtimeRateFromCache() {
         return (List<Map<String, String>>) redisTemplate.opsForValue().get(REDIS_KEY);
     }
 
-    // 특정 통화코드별로 최신 10개 환율 데이터 조회
+    // 특정 통화코드별로 최신 50개 환율 데이터 조회
     @SuppressWarnings("unchecked")
     public List<Map<String, String>> getRealtimeCurrencyRateFromCache(String currencyCode) {
         String redisKey = REDIS_KEY_PREFIX + currencyCode;
@@ -132,6 +129,24 @@ public class ExchangeRateCrawlerService {
         return result;
     }
 
+    /**
+     * 메인페이지용 - 여러 통화의 최신 데이터 조회
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Map<String, String>> getMainPageRatesData(String[] currencyCodes) {
+        Map<String, Map<String, String>> result = new LinkedHashMap<>();
+
+        for (String currencyCode : currencyCodes) {
+            String redisKey = REDIS_KEY_PREFIX + currencyCode;
+            Object cachedData = redisTemplate.opsForList().index(redisKey, 0); // 최신 1개만
+
+            if (cachedData instanceof Map) {
+                result.put(currencyCode, (Map<String, String>) cachedData);
+            }
+        }
+
+        return result;
+    }
 
     /**
      * 과거 데이터 크롤링
