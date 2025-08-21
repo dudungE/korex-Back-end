@@ -56,11 +56,11 @@ public class UserController {
     // 1. 이름 존재 여부 확인
     @GetMapping("/exists")
     public boolean existsByName(@RequestParam String name) {
-        return userService.existsByName(name);  // Service 메서드 호출 ✅
+        return userService.existsByName(name);  // Service 메서드 호출
     }
 
     @PostMapping("/verify-recipient")
     public boolean verifyRecipient(@RequestBody VerifyRecipientRequestDto dto) {
-        return userService.verifyRecipient(dto);  // Service 메서드 호출 ✅
+        return userService.verifyRecipient(dto);  // Service 메서드 호출
     }
 }

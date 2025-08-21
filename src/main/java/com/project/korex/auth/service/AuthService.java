@@ -282,7 +282,6 @@ public class AuthService {
 
         // 사용자 정보 생성
         UserInfoDto userInfo = new UserInfoDto(
-                findUser.getId(),
                 findUser.getLoginId(),
                 findUser.getRole().getRoleName(),
                 emailVerified
