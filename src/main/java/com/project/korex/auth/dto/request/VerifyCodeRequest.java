@@ -22,6 +22,7 @@ public class VerifyCodeRequest {
     @Pattern(regexp = "\\d{6}", message = "인증 코드는 6자리 숫자여야 합니다.")
     private String code;
 
+    @Builder.Default
     @NotBlank
-    private String purpose;
+    private String purpose = "SIGN_UP";
 }

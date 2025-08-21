@@ -8,6 +8,11 @@ import com.project.korex.auth.exception.*;
 import com.project.korex.common.code.ErrorCode;
 import com.project.korex.common.exception.UserNotFoundException;
 import com.project.korex.common.security.jwt.JwtProvider;
+import com.project.korex.transaction.enums.AccountType;
+import com.project.korex.transaction.entity.Balance;
+import com.project.korex.transaction.entity.Currency;
+import com.project.korex.transaction.repository.BalanceRepository;
+import com.project.korex.transaction.repository.CurrencyRepository;
 import com.project.korex.user.entity.EmailVerificationToken;
 import com.project.korex.user.entity.RefreshToken;
 import com.project.korex.user.entity.Role;
@@ -33,6 +38,7 @@ import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -50,6 +56,8 @@ public class AuthService {
     private final RoleJpaRepository roleJpaRepository;
     private final EmailVerificationTokenRepository tokenRepository;
     private final JwtProvider jwtProvider;
+    private final CurrencyRepository currencyRepository;
+    private final BalanceRepository balanceRepository;
     private final JavaMailSender mailSender;
     private final SpringTemplateEngine templateEngine;
     private final SecureRandom random = new SecureRandom();
@@ -163,6 +171,9 @@ public class AuthService {
         Role role = roleJpaRepository.findByRoleName(RoleType.USER.getKey())
                 .orElseThrow(() -> new RoleNotFoundException(ErrorCode.ROLE_NOT_FOUND));
 
+        String krwAccount = generateAccountNumber("KRW");
+        String foreignAccount = generateAccountNumber("FOREIGN");
+
         // 유저 빌더 엔티티 생성(암호화 포함)
         Users newUser = Users.builder()
                 .loginId(joinRequestDto.getLoginId())
@@ -171,13 +182,62 @@ public class AuthService {
                 .email(joinRequestDto.getEmail())
                 .phone(joinRequestDto.getPhone())
                 .birth(joinRequestDto.getBirth())
+                .krwAccount(krwAccount)
+                .foreignAccount(foreignAccount)
                 .role(role)
                 .build();
 
         // 유저 저장
-        userJpaRepository.save(newUser);
-
+        Users savedUser = userJpaRepository.save(newUser);
+        createAccountBalances(savedUser);
         log.info("회원가입 성공 ID : {}, loginId : {}", newUser.getId(), newUser.getLoginId());
+    }
+
+    private String generateAccountNumber(String accountType) {
+        Random random = new Random();
+
+        // 첫 3자리를 계좌 타입별로 구분
+        String bankCode;
+        if ("KRW".equals(accountType)) {
+            bankCode = "100";  // 원화계좌 코드
+        } else {
+            bankCode = "200";  // 외화계좌 코드
+        }
+
+        // 나머지 8자리는 동일하게 생성
+        int secondPart = 100000 + random.nextInt(900000);  // 6자리
+        int thirdPart = 10 + random.nextInt(90);           // 2자리
+
+        return String.format("%s-%06d-%02d", bankCode, secondPart, thirdPart);
+    }
+
+    private void createAccountBalances(Users user) {
+        List<Currency> allCurrencies = currencyRepository.findAll();
+        List<Balance> balances = new ArrayList<>();
+
+        for (Currency currency : allCurrencies) {
+            if ("KRW".equals(currency.getCode())) {
+                // KRW는 원화계좌에
+                balances.add(createBalance(user, currency, AccountType.KRW));
+            } else {
+                // 다른 모든 통화는 외화계좌에
+                balances.add(createBalance(user, currency, AccountType.FOREIGN));
+            }
+        }
+
+        balanceRepository.saveAll(balances);
+        log.info("사용자 {}에 대해 원화/외화 계좌의 {}개 통화 잔액이 생성되었습니다.",
+                user.getName(), balances.size());
+    }
+
+    private Balance createBalance(Users user, Currency currency, AccountType accountType) {
+        return Balance.builder()
+                .user(user)
+                .currency(currency)
+                .accountType(accountType)
+                .availableAmount(BigDecimal.ZERO)
+                .heldAmount(BigDecimal.ZERO)
+                .build();
     }
 
     public Map<String, Object> login(LoginRequestDto loginRequestDto) {

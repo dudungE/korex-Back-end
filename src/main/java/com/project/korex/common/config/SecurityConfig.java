@@ -61,6 +61,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/user/myinfo").authenticated()
                         .requestMatchers("/api/exchange/**").hasAuthority("VERIFIED")
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api/balance/**", "/api/transfer/currencies", "/api/transfer/execute", "/api/transfer/currencies").permitAll()
+                        .requestMatchers("/api/user/exists/**", "/api/user/verify-recipient").permitAll()
                         .anyRequest().authenticated());
         http
                 .sessionManagement((session) -> session
