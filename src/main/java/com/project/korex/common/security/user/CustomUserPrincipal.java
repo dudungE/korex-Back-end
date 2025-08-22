@@ -18,6 +18,10 @@ public class CustomUserPrincipal implements UserDetails{
     private final String attributeKey;
     private final String registrationId;
 
+    public Long getUserId() {
+        return user != null ? user.getId() : null;
+    }
+
     //일반 Login 생성
     public CustomUserPrincipal(Users user) {
         this.user = user;
