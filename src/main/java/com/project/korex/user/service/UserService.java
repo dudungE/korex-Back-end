@@ -53,6 +53,7 @@ public class UserService {
                 .phone(user.getPhone())
                 .birth(user.getBirth())
                 .emailVerified(emailVerified)
+                .role(user.getRole())
                 .build();
     }
 
@@ -102,7 +103,7 @@ public class UserService {
 
         // 현재 비밀번호 일치 확인
         if (!passwordEncoder.matches(req.getCurrentPassword(), user.getPassword())) {
-            throw new LoginFailedException(ErrorCode.PASSWORD_MISMATCH);
+            throw new LoginFailedException(ErrorCode.PASSWORD_MISMATCH, user.getFailCount(), user.isRestricted());
         }
 
         // 새 비밀번호 확인 일치

@@ -22,12 +22,18 @@ public class ErrorResponseDto {
     private final String path;
     private List<ValidationError> details; // 유효성 검사 에러 상세 정보
 
+    private final Integer failCount;
+    private final Boolean restricted;
+
     private ErrorResponseDto(ErrorCode errorCode, String path) {
         this.status = errorCode.getStatus().value();
         this.error = errorCode.getStatus().name();
         this.code = errorCode.getCode();
         this.message = errorCode.getMessage();
         this.path = path;
+        this.details = null;
+        this.failCount = null;
+        this.restricted = null;
     }
 
     private ErrorResponseDto(ErrorCode errorCode, String path, List<ValidationError> details) {
@@ -37,6 +43,19 @@ public class ErrorResponseDto {
         this.message = errorCode.getMessage();
         this.path = path;
         this.details = details;
+        this.failCount = null;
+        this.restricted = null;
+    }
+
+    private ErrorResponseDto(ErrorCode errorCode, String path, Integer failCount, Boolean restricted) {
+        this.status = errorCode.getStatus().value();
+        this.error = errorCode.getStatus().name();
+        this.code = errorCode.getCode();
+        this.message = errorCode.getMessage();
+        this.path = path;
+        this.details = null;
+        this.failCount = failCount;
+        this.restricted = restricted;
     }
 
     public static ErrorResponseDto of(ErrorCode errorCode, String path) {
@@ -49,6 +68,10 @@ public class ErrorResponseDto {
                 .toList();
 
         return new ErrorResponseDto(errorCode, path, list);
+    }
+
+    public static ErrorResponseDto of(ErrorCode errorCode, String path, Integer failCount, Boolean restricted) {
+        return new ErrorResponseDto(errorCode, path, failCount, restricted);
     }
 
     // 유효성 검사 에러를 담을 내부 레코드

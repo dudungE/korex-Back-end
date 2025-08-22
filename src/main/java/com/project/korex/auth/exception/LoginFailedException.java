@@ -10,9 +10,13 @@ import lombok.Getter;
 public class LoginFailedException extends RuntimeException {
 
   private final ErrorCode errorCode;
+  private final Integer failCount;
+  private final Boolean restricted;
 
-  public LoginFailedException(ErrorCode errorCode) {
-    super(errorCode.getMessage());
-    this.errorCode = errorCode;
+  public LoginFailedException(ErrorCode code, Integer failCount, Boolean restricted) {
+    super(code.getMessage());
+    this.errorCode = code;
+    this.failCount = failCount;
+    this.restricted = restricted;
   }
 }

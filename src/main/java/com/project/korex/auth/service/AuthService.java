@@ -178,6 +178,7 @@ public class AuthService {
         log.info("회원가입 성공 ID : {}, loginId : {}", newUser.getId(), newUser.getLoginId());
     }
 
+    @Transactional(noRollbackFor = LoginFailedException.class)
     public Map<String, Object> login(LoginRequestDto loginRequestDto) {
         String loginId = loginRequestDto.getLoginId();
         Users findUser = userJpaRepository.findByLoginId(loginId)
@@ -185,7 +186,22 @@ public class AuthService {
 
         // 비밀번호 검증
         if (!passwordEncoder.matches(loginRequestDto.getPassword(), findUser.getPassword())) {
-            throw new LoginFailedException(ErrorCode.PASSWORD_MISMATCH);
+            int next = findUser.getFailCount() + 1;
+            findUser.setFailCount(next);
+
+            // 5회 이상 틀릴 경우 계정 제한
+            if (next >= 5 && !findUser.isRestricted()) {
+                findUser.setRestricted(true);
+                findUser.setRestrictedAt(LocalDateTime.now());
+                log.warn("비밀번호 {}회 연속 실패로 제한 전환: loginId={}", next, loginId);
+            }
+            userJpaRepository.save(findUser);
+            throw new LoginFailedException(ErrorCode.PASSWORD_MISMATCH, next, findUser.isRestricted());
+        }
+
+        if (findUser.getFailCount() > 0) {
+            findUser.setFailCount(0);
+            userJpaRepository.save(findUser);
         }
 
         boolean emailVerified = false;
@@ -198,6 +214,7 @@ public class AuthService {
         List<String> authorities = new ArrayList<>();
         authorities.add(findUser.getRole().getRoleName());
         if (emailVerified) authorities.add("VERIFIED");
+        if (findUser.isRestricted()) authorities.add("RESTRICTED");
 
         // 액세스 토큰 생성
         String accessToken  = jwtProvider.createAccessToken(findUser.getLoginId(), authorities);
@@ -262,7 +279,7 @@ public class AuthService {
     }
 
     public HashMap<String, String> reissue(String refreshToken) {
-        // 리프레시 토큰 유효성 검증 (만료, 위조 등)
+        // 리프레시 토큰 유효성 검증
         if (!jwtProvider.validateToken(refreshToken)) {
             throw new InvalidTokenException(ErrorCode.INVALID_TOKEN);
         }
@@ -274,7 +291,7 @@ public class AuthService {
         // 기존 리프레시 토큰 삭제
         refreshTokenRepository.delete(findRefreshToken);
 
-        // 토큰에서 사용자 정보(loginId, role) 추출 및 검증(위에서 진행하긴 했음)
+        // 토큰에서 사용자 정보 추출 및 검증
         String loginId = jwtProvider.getLoginId(refreshToken);
         //String role = jwtProvider.getRole(refreshToken);
 
@@ -290,7 +307,7 @@ public class AuthService {
                     .existsByEmailAndPurposeAndVerifiedTrue(email, VerificationPurpose.SIGN_UP);
         }
 
-        String role = findUser.getRole().getRoleName(); // 예: ROLE_USER
+        String role = findUser.getRole().getRoleName();
         List<String> authorities = new ArrayList<>();
         authorities.add(role);
         if (emailVerified) authorities.add("VERIFIED");
@@ -299,7 +316,6 @@ public class AuthService {
         String newAccessToken = jwtProvider.createAccessToken(loginId, authorities);
         // 새로운 리프레시 토큰 생성
         String newRefreshToken = jwtProvider.createRefreshToken(loginId, authorities);
-        // 만료시간(DB저장 용)
         LocalDateTime refreshTokenExpireTime = LocalDateTime.now().plusSeconds(JwtProvider.REFRESH_TOKEN_EXPIRE_TIME / 1000);
 
         // 토큰 빌더 엔티티 생성
