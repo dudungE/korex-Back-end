@@ -37,7 +37,12 @@ public enum ErrorCode {
 
     // Balance
     INSUFFICIENT_BALANCE(HttpStatus.BAD_REQUEST,"B001", "잔액이 부족합니다."),
-    NOT_FOUND(HttpStatus.NOT_FOUND, "B002", "해당 통화가 없습니다.");
+    NOT_FOUND(HttpStatus.NOT_FOUND, "B002", "해당 통화가 없습니다."),
+    TRANSFER_NOT_SELF(HttpStatus.BAD_REQUEST, "B003", "본인에게 송금할 수 없습니다."),
+
+    // Exchange
+    INVALID_CURRENCY(HttpStatus.UNAUTHORIZED, "E001", "유효하지 않은 통화입니다."),
+    EXCHANGE_RATE_NOT_FOUND(HttpStatus.NOT_FOUND,"E002", "환율 정보를 조회 할 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;

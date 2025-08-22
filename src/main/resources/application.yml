@@ -59,3 +59,8 @@ springdoc:
 
 custom:
   site-host: http://localhost:8080       # ${SITE_HOST}
+
+naver:
+  client:
+    id: ${YOUR_CLIENT_ID}
+    secret: ${YOUR_CLIENT_SECRET}

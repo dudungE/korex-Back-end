@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.lang.ScopedValue;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -25,5 +26,7 @@ public interface BalanceRepository extends JpaRepository<Balance, Long> {
     @Modifying
     @Query("UPDATE Balance b SET b.availableAmount = b.availableAmount + :amount WHERE b.id = :userId AND b.currency = :currencyCode")
     void addBalance(@Param("userId") Long userId, @Param("currencyCode") String currencyCode, @Param("amount") BigDecimal amount);
+
+    Balance balance findByUserIdAndCurrencyCode(Long userId, String currencyCode);
 }
 

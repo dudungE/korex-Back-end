@@ -103,6 +103,7 @@ public class AuthController {
                     .anyMatch(a -> "VERIFIED".equals(a.getAuthority()));
 
             UserInfoDto userInfo = new UserInfoDto(
+                    userDetails.getUser().getId(),
                     userDetails.getName(),
                     role,
                     emailVerified

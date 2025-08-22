@@ -42,6 +42,9 @@ public class Transaction extends BaseEntity {
     @Column(name = "receive_amount", precision = 18, scale = 4)
     private BigDecimal receiveAmount;
 
+    @Column(name = "fee_percentage", precision = 5, scale = 4)
+    private BigDecimal feePercentage;
+
     @Column(name = "exchange_rate_applied", precision = 18, scale = 8)
     private BigDecimal exchangeRateApplied;
 

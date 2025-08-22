@@ -7,6 +7,7 @@ import com.project.korex.auth.exception.PasswordMismatchException;
 import com.project.korex.auth.service.AuthService;
 import com.project.korex.common.code.ErrorCode;
 import com.project.korex.common.exception.UserNotFoundException;
+import com.project.korex.transaction.exception.CannotTransferToSelfException;
 import com.project.korex.user.dto.ChangePasswordRequestDto;
 import com.project.korex.user.dto.MyInfoResponseDto;
 import com.project.korex.user.dto.MyInfoUpdateRequestDto;
@@ -136,7 +137,11 @@ public class UserService {
             Users user = userJpaRepository.findByPhone(dto.getPhone())
                     .orElseThrow(() -> new RuntimeException("해당 번호의 사용자를 찾을 수 없습니다"));
 
-            return user.getName().equals(dto.getName());
+            if(user.getId().equals(dto.getCurrentUserId())){
+                throw new CannotTransferToSelfException(ErrorCode.TRANSFER_NOT_SELF);
+            }
+
+            return user.getName().equals(dto.getName()) ;
         } catch (Exception e) {
             log.error("수취인 검증 실패: {}", e.getMessage());
             throw new RuntimeException("수취인 검증 중 오류가 발생했습니다");

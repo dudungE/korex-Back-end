@@ -5,6 +5,7 @@ import com.project.korex.common.code.ErrorCode;
 import com.project.korex.common.dto.ErrorResponseDto;
 import com.project.korex.common.exception.InsufficientBalanceException;
 import com.project.korex.common.exception.UserNotFoundException;
+import com.project.korex.transaction.exception.CannotTransferToSelfException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -52,7 +53,8 @@ public class GlobalExceptionHandler {
             VerificationTokenNotFoundException.class,
             InvalidVerificationCodeException.class,
             EmailNotVerifiedException.class,
-            InsufficientBalanceException.class
+            InsufficientBalanceException.class,
+            CannotTransferToSelfException.class
     })
     public ResponseEntity<ErrorResponseDto> handleBadRequestException(RuntimeException ex, HttpServletRequest request) {
         ErrorCode errorCode = getErrorCodeFromException(ex);
