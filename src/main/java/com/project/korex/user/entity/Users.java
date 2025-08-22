@@ -41,6 +41,15 @@ public class Users extends BaseEntity {
     @Column(nullable = false, length = 30)
     private String birth;
 
+    @Column(name = "krw_account", nullable = false, length = 15)
+    private String krwAccount;
+
+    @Column(name = "foreign_account", nullable = false, length = 15)
+    private String foreignAccount;
+
+    @Column(name = "transaction_password", length = 4)
+    private String transactionPassword;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id")
     private Role role; // 회원 권한 (USER, ADMIN)
@@ -58,13 +67,16 @@ public class Users extends BaseEntity {
     private LocalDateTime restrictedAt;
 
     @Builder
-    private Users(String loginId, String password, String name, String email, String phone, String birth, Role role) {
+    private Users(String loginId, String password, String name, String email, String phone, String birth, String krwAccount, String foreignAccount, String transactionPassword, Role role) {
         this.loginId = loginId;
         this.password = password;
         this.name = name;
         this.email = email;
         this.phone = phone;
         this.birth = birth;
+        this.krwAccount = krwAccount;
+        this.foreignAccount = foreignAccount;
+        this.transactionPassword = transactionPassword;
         this.role = role;
     }
 
