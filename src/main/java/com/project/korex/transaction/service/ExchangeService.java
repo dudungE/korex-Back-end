@@ -54,7 +54,7 @@ public class ExchangeService {
     private UserJpaRepository userRepository;
 
     // Redis 환율 조회는 RestTemplate으로 기존 API 호출
-    @Autowired
+
     private RestTemplate restTemplate;
 
     /**
@@ -64,7 +64,7 @@ public class ExchangeService {
         // 1. 기존 ExchangeRateController API로 현재 환율 조회
         List<Map<String, String>> currentRate = getCurrentExchangeRateFromAPI(fromCurrency, toCurrency);
         if (currentRate == null || currentRate.isEmpty()) {
-            throw new ExchangeException("환율 정보를 조회할 수 없습니다.");
+            throw new ExchangeException(ErrorCode.EXCHANGE_RATE_NOT_FOUND);
         }
 
         // 2. 환전 계산
@@ -90,10 +90,10 @@ public class ExchangeService {
 
         // 2. Currency 객체 조회
         Currency fromCurrencyEntity = currencyRepository.findById(fromCurrency)
-                .orElseThrow(() -> new ExchangeException(ErrorCode.INVALID_CURRENCY, "유효하지 않은 출금 통화: " + fromCurrency));
+                .orElseThrow(() -> new ExchangeException(ErrorCode.INVALID_FROM_CURRENCY));
 
         Currency toCurrencyEntity = currencyRepository.findById(toCurrency)
-                .orElseThrow(() -> new ExchangeException(ErrorCode.INVALID_CURRENCY, "유효하지 않은 입금 통화: " + toCurrency));
+                .orElseThrow(() -> new ExchangeException(ErrorCode.INVALID_TO_CURRENCY));
 
         // 2. 기존 API로 현재 환율 조회
         List<Map<String, String>> currentRate = getCurrentExchangeRateFromAPI(fromCurrency, toCurrency);
@@ -166,7 +166,7 @@ public class ExchangeService {
 
         BigDecimal baseRate = new BigDecimal(currentRate.get("base_rate").toString().replace(",", ""));
 
-        BigDecimal convertedAmount;
+        BigDecimal convertedAmount = BigDecimal.ZERO;
         if ("KRW".equals(fromCurrency)) {
             convertedAmount = amount.divide(baseRate, 6, RoundingMode.HALF_UP);
         } else if ("KRW".equals(toCurrency)) {
