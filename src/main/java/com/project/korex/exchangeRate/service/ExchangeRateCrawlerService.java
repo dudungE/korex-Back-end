@@ -1,5 +1,6 @@
 package com.project.korex.exchangeRate.service;
 
+import com.project.korex.exchangeRate.alert.service.AlertService;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -19,6 +20,10 @@ public class ExchangeRateCrawlerService {
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
+
+    @Autowired
+    private AlertService alertService;
+
     private static final String REDIS_KEY = "exchange:realtime";
     private static final String REDIS_KEY_PREFIX = "exchange:realtime:";
 
@@ -26,7 +31,7 @@ public class ExchangeRateCrawlerService {
     private static final String URL_DAILY = "https://finance.naver.com/marketindex/exchangeDailyQuote.naver?marketindexCd=FX_%sKRW&page=%d";
 
     // 30초마다 크롤링 후 각 통화별 Redis 리스트에 저장
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 600000)
     public void scheduledCrawlAndCache() {
         try {
             // 네이버 금융 환율 데이터 크롤링
@@ -46,6 +51,9 @@ public class ExchangeRateCrawlerService {
 
                     // 해당 key(통화 코드)에 Redis 저장
                     saveRealtimeData(currencyCode, rateData);
+
+                    // 환율 업데이트 후 알림 체크 및 발송
+                    triggerAlertsForCurrency(currencyCode, rateData);
                 }
             }
             System.out.println("crawling completed: " + currentTime + ", num of currency: " + exchangeList.size());
@@ -54,6 +62,25 @@ public class ExchangeRateCrawlerService {
             System.err.println("환율 크롤링 실패: " + e.getMessage());
         }
     }
+
+    /**
+     * 환율 업데이트 후 해당 통화의 알림 체크
+     */
+    private void triggerAlertsForCurrency(String currencyCode, Map<String, String> rateData) {
+        try {
+            String baseRateStr = rateData.get("base_rate");
+            if (baseRateStr != null && !baseRateStr.isEmpty()) {
+                // 쉼표 제거 후 숫자 변환
+                double currentRate = Double.parseDouble(baseRateStr.replaceAll(",", ""));
+
+                // 알림 서비스에서 해당 통화의 알림들 체크
+                alertService.checkAndSendAlerts(currencyCode, currentRate);
+            }
+        } catch (NumberFormatException e) {
+            System.err.println("환율 파싱 실패 - " + currencyCode + ": " + e.getMessage());
+        }
+    }
+
 
     // 통화코드별 Redis 키 생성 및 데이터 저장 (최신 50개 유지)
     public void saveRealtimeData(String currencyCode, Map<String, String> newData) {
