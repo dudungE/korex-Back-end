@@ -69,6 +69,10 @@ public class UserService {
                 if (userJpaRepository.existsByEmailAndIdNot(newEmail, user.getId())) {
                     throw new DuplicateEmailException(ErrorCode.DUPLICATE_EMAIL);
                 }
+                String oldEmail = user.getEmail();
+                if (oldEmail != null && !oldEmail.isBlank()) {
+                    emailVerificationTokenRepository.deleteAllByEmail(oldEmail);
+                }
                 user.setEmail(newEmail);
             }
         }
@@ -112,12 +116,11 @@ public class UserService {
             throw new IllegalArgumentException("기존 비밀번호와 동일합니다.");
         }
 
-        // 새 비밀번호 해시 저장
         user.setPassword(passwordEncoder.encode(req.getNewPassword()));
         userJpaRepository.save(user);
 
-        // 5) 세션/토큰 무효화
-        refreshTokenRepository.deleteByUser(user); // 보유 중인 리프레시 토큰 전부 폐기
+        // 세션/토큰 무효화
+        refreshTokenRepository.deleteByUser(user);
     }
 
     // 이름 존재 여부 확인

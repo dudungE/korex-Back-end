@@ -26,14 +26,15 @@ public enum ErrorCode {
     AUTHENTICATION_FAILED(HttpStatus.UNAUTHORIZED, "A003", "인증에 실패했습니다. 유효한 자격 증명이 필요합니다."),
     TOKEN_NOT_FOUND(HttpStatus.BAD_REQUEST, "A004", "액세스 토큰이 필요합니다."),
     VERIFICATION_TOKEN_NOT_FOUND(HttpStatus.BAD_REQUEST, "A005", "이메일 인증 토큰이 존재하지 않거나 만료되었습니다."),
-    EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "A006", "인증 토큰이 만료되었습니다."),
-    INVALID_CODE(HttpStatus.BAD_REQUEST, "A007", "인증 코드가 일치하지 않습니다."),
-    EMAIL_VERIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "A008", "이메일 인증 정보가 존재하지 않습니다."),
-    EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "A009", "이메일 인증이 완료되지 않았습니다."),
+    INVALID_CODE(HttpStatus.BAD_REQUEST, "A006", "인증 코드가 일치하지 않습니다."),
+    EMAIL_VERIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "A007", "이메일 인증 정보가 존재하지 않습니다."),
 
     // Role (RXXX)
     ROLE_NOT_FOUND(HttpStatus.NOT_FOUND, "R001", "역할을 찾을 수 없습니다."),
-
+  
+    // Support (SXXX)
+    INQUIRY_NOT_FOUND(HttpStatus.NOT_FOUND, "S001", "문의 내역을 찾을 수 없습니다."),
+    INQUIRY_WITHDRAW_CONFLICT(HttpStatus.CONFLICT, "S002", "문의 철회가 불가능한 상태입니다."),
 
     // Balance
     INSUFFICIENT_BALANCE(HttpStatus.BAD_REQUEST,"B001", "잔액이 부족합니다."),
@@ -42,6 +43,7 @@ public enum ErrorCode {
     // ForeignTransfer
     CURRENCY_NOT_FOUND(HttpStatus.NOT_FOUND, "F001", "해당 통화를 찾을 수 없습니다."),
     RECIPIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "F002", "수취인 정보를 찾을 수 없습니다.");
+
 
 
     private final HttpStatus status;
