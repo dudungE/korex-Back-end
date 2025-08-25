@@ -65,7 +65,7 @@ public class ExchangeController {
                     .exchangeRate(simulation.getExchangeRate())
                     .fee(simulation.getFee())
                     .totalDeductedAmount(simulation.getTotalDeductedAmount())
-                    .rateUpdateTime(simulation.getRateUpdateTime())
+                    .rateUpdateTime(String.valueOf(simulation.getRateUpdateTime()))
                     .build();
 
             return ResponseEntity.ok(response);

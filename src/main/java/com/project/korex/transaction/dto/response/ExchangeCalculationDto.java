@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class ExchangeCalculationDto {
     private BigDecimal exchangeRate;
+    private BigDecimal beforeFeeAmount;
     private BigDecimal convertedAmount;
     private BigDecimal fee;
     private BigDecimal totalDeductedAmount;

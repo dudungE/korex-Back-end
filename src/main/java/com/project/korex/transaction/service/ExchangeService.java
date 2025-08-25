@@ -32,8 +32,10 @@ import java.awt.print.Pageable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,19 +45,13 @@ import java.util.stream.Collectors;
 public class ExchangeService {
 
     private final CurrencyRepository currencyRepository;
-
-    @Autowired
-    private BalanceService balanceService; // 기존 BalanceService 활용
-
-    @Autowired
-    private TransactionRepository transactionRepository;
-
-    @Autowired
-    private UserJpaRepository userRepository;
-
+    private final BalanceService balanceService; // 기존 BalanceService 활용
+    private final TransactionRepository transactionRepository;
+    private final UserJpaRepository userRepository;
     // Redis 환율 조회는 RestTemplate으로 기존 API 호출
+    private final RestTemplate restTemplate;
 
-    private RestTemplate restTemplate;
+
 
     /**
      * 환전 시뮬레이션
@@ -76,7 +72,8 @@ public class ExchangeService {
                 .exchangeRate(calculation.getExchangeRate())
                 .fee(calculation.getFee())
                 .totalDeductedAmount(calculation.getTotalDeductedAmount())
-                .rateUpdateTime(currentRate.get(0).get("crawl_time"))
+                .rateUpdateTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+//                .rateUpdateTime(currentRate.get(0).get("crawl_time"))
                 .build();
     }
 
@@ -111,7 +108,7 @@ public class ExchangeService {
 
         // 5. 환전 실행 (기존 BalanceService 활용)
         balanceService.deductBalance(userId, fromCurrency, amount);
-        balanceService.addBalance(userId, toCurrency, calculation.getTotalDeductedAmount());
+        balanceService.addBalance(userId, toCurrency, calculation.getConvertedAmount());
 
         // 6. 거래 기록 저장
         Transaction transaction = Transaction.builder()
@@ -120,7 +117,7 @@ public class ExchangeService {
                 .fromCurrencyCode(fromCurrencyEntity)
                 .toCurrencyCode(toCurrencyEntity)
                 .sendAmount(amount)
-                .receiveAmount(calculation.getTotalDeductedAmount())
+                .receiveAmount(calculation.getConvertedAmount())
                 .feePercentage(new BigDecimal("0.005"))
                 .exchangeRateApplied(calculation.getExchangeRate())
                 .feeAmount(calculation.getFee())
@@ -162,39 +159,58 @@ public class ExchangeService {
      * 환전 계산
      */
     private ExchangeCalculationDto calculateExchange(String fromCurrency, String toCurrency,
-                                                  BigDecimal amount, Map<String, String> currentRate) {
+                                                     BigDecimal amount, Map<String, String> currentRate) {
 
         BigDecimal baseRate = new BigDecimal(currentRate.get("base_rate").toString().replace(",", ""));
-
-        BigDecimal convertedAmount = BigDecimal.ZERO;
-        if ("KRW".equals(fromCurrency)) {
-            convertedAmount = amount.divide(baseRate, 6, RoundingMode.HALF_UP);
-        } else if ("KRW".equals(toCurrency)) {
-            convertedAmount = amount.multiply(baseRate);
-        } else {
-            //throw new ExchangeException("KRW를 포함한 환전만 지원됩니다.");
-        }
-
         BigDecimal feeRate = new BigDecimal("0.005");
-        BigDecimal fee = amount.multiply(feeRate);
 
-        BigDecimal afterFee;
+        // 통화별 환율 단위 설정
+        BigDecimal exchangeUnit = getExchangeUnit(fromCurrency, toCurrency);
+        BigDecimal adjustedRate = baseRate.divide(exchangeUnit, 6, RoundingMode.HALF_UP);
+
+        BigDecimal fee = BigDecimal.ZERO;
+        BigDecimal totalDeductedAmount = BigDecimal.ZERO;
+        BigDecimal convertedAmount = BigDecimal.ZERO;
+
+
         if ("KRW".equals(fromCurrency)) {
-            BigDecimal amountAfterFee = amount.subtract(fee);
-            afterFee = amountAfterFee.divide(baseRate, 6, RoundingMode.HALF_UP);
-        } else {
-            afterFee = convertedAmount.subtract(fee);
-        }
+            // KRW → 외화
+            fee = amount.multiply(feeRate);
+            totalDeductedAmount = fee;
 
-        BigDecimal preferentialRate = new BigDecimal("1.10");
-        BigDecimal finalAmount = afterFee.multiply(preferentialRate);
+            BigDecimal amountAfterFee = amount.subtract(fee);
+            convertedAmount = amountAfterFee.divide(adjustedRate, 2, RoundingMode.HALF_UP);
+
+        } else if ("KRW".equals(toCurrency)) {
+            // 외화 → KRW
+            fee = amount.multiply(feeRate);
+            totalDeductedAmount = fee;
+
+            BigDecimal amountAfterFee = amount.subtract(fee);
+            convertedAmount = amountAfterFee.multiply(adjustedRate);
+        }
 
         return ExchangeCalculationDto.builder()
-                .exchangeRate(baseRate)
+                .exchangeRate(baseRate) // 원본 환율 표시용
+                .beforeFeeAmount(amount.multiply(adjustedRate))
                 .convertedAmount(convertedAmount)
                 .fee(fee)
-                .totalDeductedAmount(finalAmount)
+                .totalDeductedAmount(totalDeductedAmount)
                 .build();
+    }
+
+    /**
+     * 통화별 환율 단위 반환
+     */
+    // 이게 제일 단순하고 좋아요
+    private BigDecimal getExchangeUnit(String fromCurrency, String toCurrency) {
+
+        String targetCurrency = "KRW".equals(fromCurrency) ? toCurrency : fromCurrency;
+
+        return switch (targetCurrency) {
+            case "JPY", "CNY" -> new BigDecimal("100");
+            default -> BigDecimal.ONE;
+        };
     }
 
     /**
