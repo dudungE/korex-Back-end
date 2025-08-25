@@ -24,7 +24,7 @@ public class ForeignTransferTermsAgreement {
     @Column(name = "agreed")
     private Boolean agreed;
 
-    @Column(name = "uploaded_at")
-    private LocalDateTime uploadedAt;
+    @Column(name = "agreed_at")
+    private LocalDateTime agreedAt;
 
 }

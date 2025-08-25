@@ -26,7 +26,7 @@ public class ExchangeRateCrawlerService {
     private static final String URL_DAILY = "https://finance.naver.com/marketindex/exchangeDailyQuote.naver?marketindexCd=FX_%sKRW&page=%d";
 
     // 30초마다 크롤링 후 각 통화별 Redis 리스트에 저장
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 600000)
     public void scheduledCrawlAndCache() {
         try {
             // 네이버 금융 환율 데이터 크롤링

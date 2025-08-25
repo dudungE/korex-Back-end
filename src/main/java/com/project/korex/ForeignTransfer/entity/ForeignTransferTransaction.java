@@ -1,6 +1,5 @@
  package com.project.korex.ForeignTransfer.entity;
 
- import com.project.korex.common.BaseEntity;
  import com.project.korex.transaction.entity.Transaction;
  import jakarta.persistence.*;
  import lombok.Getter;
@@ -14,7 +13,7 @@
  @Table(name = "ForeignTransferTransaction")
  @Getter
  @Setter
- public class ForeignTransferTransaction extends ForeignTransferEntity {
+ public class ForeignTransferTransaction {
 
      @Id
      @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,5 +43,12 @@
 
      @LastModifiedDate
      private LocalDateTime updatedAt;
+
+     @CreatedDate
+     @Column(updatable = false)
+     private LocalDateTime EstimatedArrivalDate; // 해외송금 예상 도착일
+
+     @LastModifiedDate
+     private LocalDateTime ActualArrivalDate; // 해외송금 실제 도착일
 
  }
