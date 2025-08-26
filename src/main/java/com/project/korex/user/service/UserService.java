@@ -55,6 +55,7 @@ public class UserService {
                 .phone(user.getPhone())
                 .birth(user.getBirth())
                 .emailVerified(emailVerified)
+                .role(user.getRole())
                 .build();
     }
 
@@ -69,6 +70,10 @@ public class UserService {
             if (!newEmail.equalsIgnoreCase(user.getEmail())) {
                 if (userJpaRepository.existsByEmailAndIdNot(newEmail, user.getId())) {
                     throw new DuplicateEmailException(ErrorCode.DUPLICATE_EMAIL);
+                }
+                String oldEmail = user.getEmail();
+                if (oldEmail != null && !oldEmail.isBlank()) {
+                    emailVerificationTokenRepository.deleteAllByEmail(oldEmail);
                 }
                 user.setEmail(newEmail);
             }
@@ -100,7 +105,7 @@ public class UserService {
 
         // 현재 비밀번호 일치 확인
         if (!passwordEncoder.matches(req.getCurrentPassword(), user.getPassword())) {
-            throw new LoginFailedException(ErrorCode.PASSWORD_MISMATCH);
+            throw new LoginFailedException(ErrorCode.PASSWORD_MISMATCH, user.getFailCount(), user.isRestricted());
         }
 
         // 새 비밀번호 확인 일치
@@ -113,12 +118,11 @@ public class UserService {
             throw new IllegalArgumentException("기존 비밀번호와 동일합니다.");
         }
 
-        // 새 비밀번호 해시 저장
         user.setPassword(passwordEncoder.encode(req.getNewPassword()));
         userJpaRepository.save(user);
 
-        // 5) 세션/토큰 무효화
-        refreshTokenRepository.deleteByUser(user); // 보유 중인 리프레시 토큰 전부 폐기
+        // 세션/토큰 무효화
+        refreshTokenRepository.deleteByUser(user);
     }
 
     // 이름 존재 여부 확인

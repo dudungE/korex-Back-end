@@ -1,5 +1,6 @@
 package com.project.korex.user.entity;
 
+import com.project.korex.common.BaseEntity;
 import com.project.korex.user.enums.VerificationPurpose;
 import jakarta.persistence.*;
 import lombok.*;
@@ -9,7 +10,7 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class EmailVerificationToken {
+public class EmailVerificationToken extends BaseEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

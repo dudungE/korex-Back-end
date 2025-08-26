@@ -1,5 +1,6 @@
 package com.project.korex.user.dto;
 
+import com.project.korex.user.entity.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -27,4 +28,7 @@ public class MyInfoResponseDto {
 
     @NotBlank
     private boolean emailVerified;
+
+    @NotBlank
+    private Role role;
 }

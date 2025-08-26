@@ -67,7 +67,8 @@ public class AuthService {
     @Value("${custom.site-host}")
     private String siteHost;
 
-    public void sendVerificationCode(String email, VerificationPurpose purpose) {
+    public void sendVerificationCode(String email, VerificationPurpose purpose)
+            throws MessagingException, UnsupportedEncodingException {
         String code = generateRandomCode();
 
         EmailVerificationToken token = EmailVerificationToken.builder()
@@ -87,7 +88,7 @@ public class AuthService {
                 .orElseThrow(() -> new VerificationTokenNotFoundException(ErrorCode.VERIFICATION_TOKEN_NOT_FOUND));
 
         if (token.getExpiryDate().isBefore(LocalDateTime.now()))
-            throw new TokenExpriedException(ErrorCode.EXPIRED_TOKEN);
+            throw new TokenExpriedException(ErrorCode.TOKEN_EXPIRED);
 
         if (!token.getCode().equals(inputCode))
             throw new InvalidVerificationCodeException(ErrorCode.INVALID_CODE);
@@ -102,43 +103,40 @@ public class AuthService {
                 .orElseThrow(() -> new TokenNotFoundException(ErrorCode.EMAIL_VERIFICATION_NOT_FOUND));
 
         if (!latest.isVerified() || latest.getExpiryDate().isBefore(LocalDateTime.now()))
-            throw new EmailNotVerifiedException(ErrorCode.EMAIL_NOT_VERIFIED);
+            throw new EmailNotVerifiedException(ErrorCode.EMAIL_VERIFICATION_NOT_FOUND);
     }
 
     private String generateRandomCode() {
         return String.format("%06d", random.nextInt(1_000_000));
     }
 
-    private void sendEmail(String to, String code, VerificationPurpose purpose) {
-        try {
-            Context ctx = new Context(Locale.KOREA);
-            ctx.setVariable("brand", "Korex");
-            ctx.setVariable("recipientName", "고객님");
-            ctx.setVariable("minutes", VERIFY_EXPIRE_MINUTES);
-            ctx.setVariable("code", code);
-            ctx.setVariable("supportEmail", "support@korex.com");
+    private void sendEmail(String to, String code, VerificationPurpose purpose)
+            throws MessagingException, UnsupportedEncodingException {
+        Context ctx = new Context(Locale.KOREA);
+        ctx.setVariable("brand", "Korex");
+        ctx.setVariable("recipientName", "고객님");
+        ctx.setVariable("minutes", VERIFY_EXPIRE_MINUTES);
+        ctx.setVariable("code", code);
+        ctx.setVariable("supportEmail", "support@korex.com");
 
-            String subject = (purpose == VerificationPurpose.SIGN_UP)
-                    ? "[Korex] 이메일 인증 코드"
-                    : "[Korex] 비밀번호 재설정 인증 코드";
-            String template = "email-verification";
+        String subject = (purpose == VerificationPurpose.SIGN_UP)
+                ? "[Korex] 이메일 인증 코드"
+                : "[Korex] 비밀번호 재설정 인증 코드";
+        String template = "email-verification";
 
-            String html = templateEngine.process(template, ctx);
+        String html = templateEngine.process(template, ctx);
 
-            // 메시지 생성/전송
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(
-                    message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
+        // 메시지 생성/전송
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(
+                message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
 
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(html, true); // HTML
-            helper.setFrom(new InternetAddress("ghyunjin0913@gmail.com", "Korex")); // 발신자명
+        helper.setTo(to);
+        helper.setSubject(subject);
+        helper.setText(html, true); // HTML
+        helper.setFrom(new InternetAddress("ghyunjin0913@gmail.com", "Korex")); // 발신자명
 
-            mailSender.send(message);
-        } catch (MessagingException | UnsupportedEncodingException e) {
-            throw new RuntimeException("이메일 전송에 실패했습니다.", e);
-        }
+        mailSender.send(message);
     }
 
     public void joinMember(JoinRequestDto joinRequestDto) {
@@ -193,6 +191,7 @@ public class AuthService {
         log.info("회원가입 성공 ID : {}, loginId : {}", newUser.getId(), newUser.getLoginId());
     }
 
+    @Transactional(noRollbackFor = LoginFailedException.class)
     private String generateAccountNumber(String accountType) {
         Random random = new Random();
 
@@ -247,7 +246,22 @@ public class AuthService {
 
         // 비밀번호 검증
         if (!passwordEncoder.matches(loginRequestDto.getPassword(), findUser.getPassword())) {
-            throw new LoginFailedException(ErrorCode.PASSWORD_MISMATCH);
+            int next = findUser.getFailCount() + 1;
+            findUser.setFailCount(next);
+
+            // 5회 이상 틀릴 경우 계정 제한
+            if (next >= 5 && !findUser.isRestricted()) {
+                findUser.setRestricted(true);
+                findUser.setRestrictedAt(LocalDateTime.now());
+                log.warn("비밀번호 {}회 연속 실패로 제한 전환: loginId={}", next, loginId);
+            }
+            userJpaRepository.save(findUser);
+            throw new LoginFailedException(ErrorCode.PASSWORD_MISMATCH, next, findUser.isRestricted());
+        }
+
+        if (findUser.getFailCount() > 0) {
+            findUser.setFailCount(0);
+            userJpaRepository.save(findUser);
         }
 
         boolean emailVerified = false;
@@ -260,6 +274,7 @@ public class AuthService {
         List<String> authorities = new ArrayList<>();
         authorities.add(findUser.getRole().getRoleName());
         if (emailVerified) authorities.add("VERIFIED");
+        if (findUser.isRestricted()) authorities.add("RESTRICTED");
 
         // 액세스 토큰 생성
         String accessToken  = jwtProvider.createAccessToken(findUser.getLoginId(), authorities);
@@ -325,7 +340,7 @@ public class AuthService {
     }
 
     public HashMap<String, String> reissue(String refreshToken) {
-        // 리프레시 토큰 유효성 검증 (만료, 위조 등)
+        // 리프레시 토큰 유효성 검증
         if (!jwtProvider.validateToken(refreshToken)) {
             throw new InvalidTokenException(ErrorCode.INVALID_TOKEN);
         }
@@ -337,7 +352,7 @@ public class AuthService {
         // 기존 리프레시 토큰 삭제
         refreshTokenRepository.delete(findRefreshToken);
 
-        // 토큰에서 사용자 정보(loginId, role) 추출 및 검증(위에서 진행하긴 했음)
+        // 토큰에서 사용자 정보 추출 및 검증
         String loginId = jwtProvider.getLoginId(refreshToken);
         //String role = jwtProvider.getRole(refreshToken);
 
@@ -353,7 +368,7 @@ public class AuthService {
                     .existsByEmailAndPurposeAndVerifiedTrue(email, VerificationPurpose.SIGN_UP);
         }
 
-        String role = findUser.getRole().getRoleName(); // 예: ROLE_USER
+        String role = findUser.getRole().getRoleName();
         List<String> authorities = new ArrayList<>();
         authorities.add(role);
         if (emailVerified) authorities.add("VERIFIED");
@@ -362,7 +377,6 @@ public class AuthService {
         String newAccessToken = jwtProvider.createAccessToken(loginId, authorities);
         // 새로운 리프레시 토큰 생성
         String newRefreshToken = jwtProvider.createRefreshToken(loginId, authorities);
-        // 만료시간(DB저장 용)
         LocalDateTime refreshTokenExpireTime = LocalDateTime.now().plusSeconds(JwtProvider.REFRESH_TOKEN_EXPIRE_TIME / 1000);
 
         // 토큰 빌더 엔티티 생성

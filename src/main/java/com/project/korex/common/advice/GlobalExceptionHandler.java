@@ -6,6 +6,8 @@ import com.project.korex.common.dto.ErrorResponseDto;
 import com.project.korex.common.exception.InsufficientBalanceException;
 import com.project.korex.common.exception.UserNotFoundException;
 import com.project.korex.transaction.exception.CannotTransferToSelfException;
+import com.project.korex.support.exception.InquiryWithdrawConflictException;
+import com.project.korex.support.exception.InquiryNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +22,8 @@ public class GlobalExceptionHandler {
     // 404 NOT_FOUND - 리소스를 찾을 수 없음
     @ExceptionHandler({
             UserNotFoundException.class,
-            RoleNotFoundException.class
+            RoleNotFoundException.class,
+            InquiryNotFoundException.class
     })
     public ResponseEntity<ErrorResponseDto> handleNotFoundException(RuntimeException ex, HttpServletRequest request) {
         ErrorCode errorCode = getErrorCodeFromException(ex);
@@ -34,7 +37,8 @@ public class GlobalExceptionHandler {
     // 409 CONFLICT - 중복/충돌
     @ExceptionHandler({
             DuplicateLoginIdException.class,
-            DuplicateEmailException.class
+            DuplicateEmailException.class,
+            InquiryWithdrawConflictException.class
     })
     public ResponseEntity<ErrorResponseDto> handleConflictException(RuntimeException ex, HttpServletRequest request) {
         ErrorCode errorCode = getErrorCodeFromException(ex);
@@ -88,6 +92,26 @@ public class GlobalExceptionHandler {
 
         ErrorResponseDto response = ErrorResponseDto.of(errorCode, request.getRequestURI(), ex.getBindingResult().getFieldErrors());
         return new ResponseEntity<>(response, errorCode.getStatus());
+    }
+
+    @ExceptionHandler(LoginFailedException.class)
+    public ResponseEntity<ErrorResponseDto> handleLoginFailed(LoginFailedException ex,
+                                                              HttpServletRequest request) {
+        ErrorCode errorCode = ex.getErrorCode(); // 예: U004 / BAD_REQUEST
+
+        // ErrorResponseDto에 선택 필드(failCount, restricted)만 채워서 내려주기
+        ErrorResponseDto body = ErrorResponseDto.of(
+                errorCode,
+                request.getRequestURI(),
+                ex.getFailCount(),
+                ex.getRestricted()
+        );
+
+        return ResponseEntity
+                .status(errorCode.getStatus())
+                .header("X-Fail-Count",
+                        ex.getFailCount() == null ? "" : String.valueOf(ex.getFailCount()))
+                .body(body);
     }
 
     // 전체 예외 처리 (최후 수단)
