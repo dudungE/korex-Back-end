@@ -1,4 +1,4 @@
-package com.project.korex.exchangeRate.alert.domain;
+package com.project.korex.alert.domain;
 
 
 public enum AlertCondition {

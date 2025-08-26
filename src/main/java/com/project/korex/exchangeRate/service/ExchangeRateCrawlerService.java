@@ -1,6 +1,6 @@
 package com.project.korex.exchangeRate.service;
 
-import com.project.korex.exchangeRate.alert.service.AlertService;
+import com.project.korex.alert.service.AlertService;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -53,7 +53,7 @@ public class ExchangeRateCrawlerService {
                     saveRealtimeData(currencyCode, rateData);
 
                     // 환율 업데이트 후 알림 체크 및 발송
-                    triggerAlertsForCurrency(currencyCode, rateData);
+//                    triggerAlertsForCurrency(currencyCode, rateData);
                 }
             }
             System.out.println("crawling completed: " + currentTime + ", num of currency: " + exchangeList.size());
