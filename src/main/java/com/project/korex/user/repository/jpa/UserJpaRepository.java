@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.lang.ScopedValue;
 import java.util.Optional;
 
 @Repository
@@ -28,4 +29,6 @@ public interface UserJpaRepository extends JpaRepository<Users, Long> {
     Optional<Users> findByPhone(String phone);
 
     boolean existsByName(String name);
+
+    Optional<Users> findByPhoneNumberAndName(String phoneNumber, String name);
 }

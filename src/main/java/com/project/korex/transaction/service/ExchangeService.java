@@ -202,7 +202,6 @@ public class ExchangeService {
     /**
      * 통화별 환율 단위 반환
      */
-    // 이게 제일 단순하고 좋아요
     private BigDecimal getExchangeUnit(String fromCurrency, String toCurrency) {
 
         String targetCurrency = "KRW".equals(fromCurrency) ? toCurrency : fromCurrency;
