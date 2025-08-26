@@ -52,7 +52,6 @@ public class GlobalExceptionHandler {
     // 400 BAD_REQUEST - 잘못된 요청/비즈니스 로직 위반
     @ExceptionHandler({
             PasswordMismatchException.class,
-            LoginFailedException.class,
             TokenNotFoundException.class,
             VerificationTokenNotFoundException.class,
             InvalidVerificationCodeException.class,
