@@ -191,6 +191,7 @@ public class AuthService {
         log.info("회원가입 성공 ID : {}, loginId : {}", newUser.getId(), newUser.getLoginId());
     }
 
+    @Transactional(noRollbackFor = LoginFailedException.class)
     private String generateAccountNumber(String accountType) {
         Random random = new Random();
 
@@ -238,7 +239,6 @@ public class AuthService {
                 .build();
     }
 
-    @Transactional(noRollbackFor = LoginFailedException.class)
     public Map<String, Object> login(LoginRequestDto loginRequestDto) {
         String loginId = loginRequestDto.getLoginId();
         Users findUser = userJpaRepository.findByLoginId(loginId)
