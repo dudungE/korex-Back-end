@@ -4,6 +4,10 @@ import com.project.korex.account.dto.request.AddFriendsRequestDto;
 import com.project.korex.account.dto.request.ReorderFavoriteRequestDto;
 import com.project.korex.account.dto.response.FavoriteFriendsResponseDto;
 import com.project.korex.account.entity.FavoriteFriend;
+import com.project.korex.account.exception.DuplicateFavoriteException;
+import com.project.korex.account.exception.FavoriteLimitExceededException;
+import com.project.korex.account.exception.FavoriteNotFoundException;
+import com.project.korex.account.exception.InvalidRequestException;
 import com.project.korex.account.repository.FavoriteFriendRepository;
 import com.project.korex.common.code.ErrorCode;
 import com.project.korex.common.exception.UserNotFoundException;
@@ -50,24 +54,24 @@ public class FavoriteFriendService {
                 .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
 
         // 2. 친구 존재 여부 확인
-        Users friend = userRepository.findByPhoneNumberAndName(
+        Users friend = userRepository.findByPhoneAndName(
                         request.getPhoneNumber(), request.getName())
                 .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
 
         // 3. 본인을 추가하려는지 확인
         if (friend.getId().equals(userId)) {
-            //throw new InvalidRequestException("본인은 즐겨찾기에 추가할 수 없습니다");
+            throw new InvalidRequestException(ErrorCode.INVALID_REQUEST);
         }
 
         // 4. 이미 즐겨찾기에 있는지 확인
-        if (favoriteFriendRepository.existsByUserIdAndFriendUserId(userId, friend.getId())) {
-           // throw new DuplicateFavoriteException("이미 즐겨찾기에 등록된 친구입니다");
+        if (favoriteFriendRepository.existsByUser_IdAndFriend_Id(userId, friend.getId())) {
+            throw new DuplicateFavoriteException(ErrorCode.DUPLICATE_FAVORITE);
         }
 
         // 5. 즐겨찾기 개수 제한 확인 (최대 4명)
         long favoriteCount = favoriteFriendRepository.countByUserId(userId);
         if (favoriteCount >= 4) {
-            //throw new FavoriteLimitExceededException("즐겨찾기는 최대 4명까지만 등록 가능합니다");
+            throw new FavoriteLimitExceededException(ErrorCode.FAVORITE_LIMIT_EXCEED);
         }
 
         // 6. 마지막 송금일 조회 (있다면)
@@ -78,7 +82,6 @@ public class FavoriteFriendService {
         FavoriteFriend favoriteFriend = FavoriteFriend.builder()
                 .user(currentUser)                 // User 객체 설정
                 .friend(friend)                    // User 객체 설정
-                .nickname(request.getNickname())
                 .displayOrder((int) favoriteCount + 1)
                 .lastTransferDate(lastTransferDate)
                 .build();
@@ -94,8 +97,8 @@ public class FavoriteFriendService {
      */
     public void deleteFavoriteFriend(Long userId, Long favoriteId) {
         FavoriteFriend favorite = favoriteFriendRepository
-                .findByFavoriteIdAndUserId(favoriteId, userId)
-                .orElseThrow(() -> new FavoriteNotFoundException("즐겨찾기를 찾을 수 없습니다"));
+                .findByIdAndUserId(favoriteId, userId)
+                .orElseThrow(() -> new FavoriteNotFoundException(ErrorCode.FAVORITE_NOT_FOUND));
 
         favoriteFriendRepository.delete(favorite);
 
@@ -108,7 +111,7 @@ public class FavoriteFriendService {
      */
     public void reorderFavorites(Long userId, ReorderFavoriteRequestDto request) {
         List<FavoriteFriend> favorites = favoriteFriendRepository
-                .findByUserIdAndFavoriteIdIn(userId, request.getFavoriteIds());
+                .findByUser_IdAndIdIn(userId, request.getFavoriteIds());
 
         // 요청된 ID 개수와 실제 조회된 개수가 다르면 에러
         if (favorites.size() != request.getFavoriteIds().size()) {
@@ -144,11 +147,12 @@ public class FavoriteFriendService {
      */
     public void updateLastTransferDate(Long userId, Long friendUserId) {
         favoriteFriendRepository
-                .findByUserIdAndFriendUserId(userId, friendUserId)
+                .findByUser_IdAndFriend_Id(userId, friendUserId)
                 .ifPresent(favorite -> {
                     favorite.updateLastTransferDate(LocalDateTime.now());
                 });
     }
+
 
     /**
      * 삭제 후 순서 재정렬
@@ -172,9 +176,8 @@ public class FavoriteFriendService {
         return FavoriteFriendsResponseDto.builder()
                 .favoriteId(favorite.getId())
                 .friendUserId(friend.getId())
-                .nickname(favorite.getNickname())
                 .realName(friend.getName())
-                .phoneNumber(maskPhoneNumber(friend.getPhone())
+                .phoneNumber(maskPhoneNumber(friend.getPhone()))
                 .icon(generateUserIcon(friend.getName()))
                 .lastTransfer(formatLastTransferDate(favorite.getLastTransferDate()))
                 .displayOrder(favorite.getDisplayOrder())

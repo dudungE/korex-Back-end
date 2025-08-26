@@ -13,7 +13,6 @@ public class FavoriteFriendsResponseDto {
 
     private Long favoriteId;
     private Long friendUserId;
-    private String nickname;        // 사용자가 지정한 닉네임
     private String realName;        // 실제 이름
     private String phoneNumber;     // 마스킹 처리된 전화번호
     private String icon;            // 랜덤 아이콘

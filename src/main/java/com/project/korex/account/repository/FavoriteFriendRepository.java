@@ -30,22 +30,22 @@ public interface FavoriteFriendRepository extends JpaRepository<FavoriteFriend, 
     /**
      * 특정 즐겨찾기 조회 (사용자 검증용)
      */
-    Optional<FavoriteFriend> findByFavoriteIdAndUserId(Long favoriteId, Long userId);
+    Optional<FavoriteFriend> findByIdAndUserId(Long favoriteId, Long userId);
 
     /**
      * 중복 확인 (같은 친구가 이미 즐겨찾기에 있는지)
      */
-    boolean existsByUserIdAndFriendUserId(Long userId, Long friendUserId);
+    boolean existsByUser_IdAndFriend_Id(Long userId, Long friendUserId);
 
     /**
      * 친구와의 즐겨찾기 관계 조회
      */
-    Optional<FavoriteFriend> findByUserIdAndFriendUserId(Long userId, Long friendUserId);
+    Optional<FavoriteFriend> findByUser_IdAndFriend_Id(Long userId, Long friendUserId);
 
     /**
      * 여러 즐겨찾기 ID로 조회 (순서 변경용)
      */
-    List<FavoriteFriend> findByUserIdAndFavoriteIdIn(Long userId, List<Long> favoriteIds);
+    List<FavoriteFriend> findByUser_IdAndIdIn(Long userId, List<Long> favoriteIds);
 
     /**
      * 사용자 삭제 시 관련 즐겨찾기도 삭제
@@ -61,12 +61,12 @@ public interface FavoriteFriendRepository extends JpaRepository<FavoriteFriend, 
     /**
      * 사용자의 즐겨찾기를 표시 순서로 조회 (페이징)
      */
-    Page<FavoriteFriend> findByUserIdOrderByDisplayOrderAsc(Long userId, Pageable pageable);
+    //Page<FavoriteFriend> findByUserIdOrderByDisplayOrderAsc(Long userId, Pageable pageable);
 
     /**
      * 특정 표시 순서 이후의 즐겨찾기들 조회 (순서 재정렬용)
      */
-    @Query("SELECT f FROM FavoriteFriend f WHERE f.userId = :userId AND f.displayOrder > :order ORDER BY f.displayOrder ASC")
+    @Query("SELECT f FROM FavoriteFriend f WHERE f.user.id = :userId AND f.displayOrder > :order ORDER BY f.displayOrder ASC")
     List<FavoriteFriend> findByUserIdAndDisplayOrderGreaterThanOrderByDisplayOrderAsc(
             @Param("userId") Long userId,
             @Param("order") Integer order);

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -52,6 +53,16 @@ public class TransactionService {
         transaction.setStatus("COMPLETED");
 
         return transactionRepository.save(transaction);
+    }
+
+    /**
+     * 특정 사용자 간 마지막 송금일 조회 (성능 최적화)
+     */
+    @Transactional(readOnly = true)
+    public LocalDateTime getLastTransferDate(Long fromUserId, Long toUserId) {
+        return transactionRepository
+                .findLastTransferDate(fromUserId, toUserId, TransactionType.TRANSFER)
+                .orElse(null);
     }
 
     @Transactional(readOnly = true)

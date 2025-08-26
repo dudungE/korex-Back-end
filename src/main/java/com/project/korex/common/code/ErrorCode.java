@@ -48,8 +48,13 @@ public enum ErrorCode {
     // Exchange
     INVALID_FROM_CURRENCY(HttpStatus.UNAUTHORIZED, "E001", "유효하지 않은 출금 통화입니다."),
     INVALID_TO_CURRENCY(HttpStatus.UNAUTHORIZED, "E002", "유효하지 않은 입금 통화입니다."),
-    EXCHANGE_RATE_NOT_FOUND(HttpStatus.NOT_FOUND,"E003", "환율 정보를 조회 할 수 없습니다.");
+    EXCHANGE_RATE_NOT_FOUND(HttpStatus.NOT_FOUND,"E003", "환율 정보를 조회 할 수 없습니다."),
 
+    // Favorite
+    INVALID_REQUEST(HttpStatus.UNAUTHORIZED, "F001", "본인은 즐겨찾기에 추가할 수 없습니다."),
+    DUPLICATE_FAVORITE(HttpStatus.CONFLICT, "F002", "이미 즐겨찾기에 등록된 친구입니다"),
+    FAVORITE_LIMIT_EXCEED(HttpStatus.CONFLICT, "F003", "즐겨찾기는 최대 4명까지만 등록 가능합니다"),
+    FAVORITE_NOT_FOUND(HttpStatus.NOT_FOUND, "F004", "즐겨찾기를 찾을 수 없습니다");
 
     private final HttpStatus status;
     private final String code;

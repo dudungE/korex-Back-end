@@ -31,9 +31,6 @@ public class FavoriteFriend extends BaseEntity {
     @JoinColumn(name = "friend_user_id")
     private Users friend;
 
-    @Column(name = "nickname", length = 100)
-    private String nickname; // 사용자가 지정한 닉네임
-
     @Column(name = "display_order")
     @Builder.Default
     private Integer displayOrder = 1;
@@ -42,10 +39,6 @@ public class FavoriteFriend extends BaseEntity {
     private LocalDateTime lastTransferDate;
 
     // 비즈니스 메서드
-    public void updateNickname(String nickname) {
-        this.nickname = nickname;
-    }
-
     public void updateDisplayOrder(Integer displayOrder) {
         this.displayOrder = displayOrder;
     }
