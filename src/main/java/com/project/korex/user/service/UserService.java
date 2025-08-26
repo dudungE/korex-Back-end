@@ -54,7 +54,7 @@ public class UserService {
                 .phone(user.getPhone())
                 .birth(user.getBirth())
                 .emailVerified(emailVerified)
-                .role(user.getRole())
+                .roleName(user.getRole().getRoleName())
                 .build();
     }
 

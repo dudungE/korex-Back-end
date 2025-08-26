@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 public class InquiryAnswer extends BaseEntity {
@@ -23,4 +22,12 @@ public class InquiryAnswer extends BaseEntity {
 
     @Column(nullable = false)
     private Long adminId;
+
+    @Builder
+    public InquiryAnswer(Inquiry inquiry, String content, Long adminId) {
+        this.inquiry = inquiry;
+        this.content = content;
+        this.adminId = adminId;
+    }
+
 }

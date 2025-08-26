@@ -58,9 +58,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests((auth) -> auth
                         .requestMatchers("/api/auth/login", "/api/auth/join", "/api/auth/token/reissue", "/api/auth/find-id", "/api/auth/reset-password",
                                 "/api/auth/send-code","/api/auth/verify-code", "/api/auth/status", "/connect", "/connect/**", "/api/exchange/**").permitAll()
-                        .requestMatchers("/api/user/myinfo").authenticated()
-                        .requestMatchers("/api/user/myinfo", "/api/inquiries/**").authenticated()
-                        .requestMatchers("/api/exchange/**").hasAuthority("VERIFIED")
+                        .requestMatchers("/api/user/myinfo").hasAuthority("VERIFIED")
+                        .requestMatchers("/api/inquiries/**").authenticated()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/balance/**", "/api/transfer/currencies", "/api/transfer/execute", "/api/transfer/currencies").permitAll()
                         .requestMatchers("/api/user/exists/**", "/api/user/verify-recipient").permitAll()
