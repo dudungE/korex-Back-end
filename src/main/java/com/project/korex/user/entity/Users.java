@@ -4,6 +4,7 @@ import com.project.korex.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +12,11 @@ import java.util.List;
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
+@Table(name = "users",
+        indexes = {
+                @Index(name = "idx_users_restricted", columnList = "restricted")
+        }
+)
 public class Users extends BaseEntity {
 
     @Id
@@ -20,7 +26,7 @@ public class Users extends BaseEntity {
     @Column(name = "login_id", unique = true, nullable = false, length = 50)
     private String loginId; // 실제 로그인 ID
 
-
+    @Column(nullable=false)
     private String password;
 
     @Column(nullable = false, length = 30)
@@ -51,6 +57,15 @@ public class Users extends BaseEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<RefreshToken> refreshTokens = new ArrayList<>();
 
+    @Column(name="fail_count", nullable=false)
+    private int failCount = 0;  // 로그인 실패 횟수
+
+    @Column(name="restricted", nullable=false)
+    private boolean restricted = false;
+
+    @Column(name="restricted_at")
+    private LocalDateTime restrictedAt;
+
     @Builder
     private Users(String loginId, String password, String name, String email, String phone, String birth, String krwAccount, String foreignAccount, String transactionPassword, Role role) {
         this.loginId = loginId;
@@ -70,7 +85,16 @@ public class Users extends BaseEntity {
         refreshToken.setUser(this);
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void onPasswordFail(int threshold) {
+        this.failCount++;
+        if (this.failCount >= threshold && !this.restricted) {
+            this.restricted = true;
+            this.restrictedAt = LocalDateTime.now();
+        }
+    }
+
+    public void resetFailCount() {this.failCount = 0;}
+    public boolean isAdmin() {
+        return role != null && "ROLE_ADMIN".equalsIgnoreCase(role.getRoleName());
     }
 }

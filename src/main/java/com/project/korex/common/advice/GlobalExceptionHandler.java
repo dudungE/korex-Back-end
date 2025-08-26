@@ -51,7 +51,6 @@ public class GlobalExceptionHandler {
     // 400 BAD_REQUEST - 잘못된 요청/비즈니스 로직 위반
     @ExceptionHandler({
             PasswordMismatchException.class,
-            LoginFailedException.class,
             TokenNotFoundException.class,
             VerificationTokenNotFoundException.class,
             InvalidVerificationCodeException.class,
@@ -90,6 +89,26 @@ public class GlobalExceptionHandler {
 
         ErrorResponseDto response = ErrorResponseDto.of(errorCode, request.getRequestURI(), ex.getBindingResult().getFieldErrors());
         return new ResponseEntity<>(response, errorCode.getStatus());
+    }
+
+    @ExceptionHandler(LoginFailedException.class)
+    public ResponseEntity<ErrorResponseDto> handleLoginFailed(LoginFailedException ex,
+                                                              HttpServletRequest request) {
+        ErrorCode errorCode = ex.getErrorCode(); // 예: U004 / BAD_REQUEST
+
+        // ErrorResponseDto에 선택 필드(failCount, restricted)만 채워서 내려주기
+        ErrorResponseDto body = ErrorResponseDto.of(
+                errorCode,
+                request.getRequestURI(),
+                ex.getFailCount(),
+                ex.getRestricted()
+        );
+
+        return ResponseEntity
+                .status(errorCode.getStatus())
+                .header("X-Fail-Count",
+                        ex.getFailCount() == null ? "" : String.valueOf(ex.getFailCount()))
+                .body(body);
     }
 
     // 전체 예외 처리 (최후 수단)
