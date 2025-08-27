@@ -12,15 +12,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AddFriendsRequestDto {
 
-    @NotBlank(message = "닉네임을 입력해주세요")
-    @Size(max = 100, message = "닉네임은 100자 이하로 입력해주세요")
-    private String nickname;
-
     @NotBlank(message = "친구 이름을 입력해주세요")
     @Size(max = 100, message = "이름은 100자 이하로 입력해주세요")
     private String name;
 
     @NotBlank(message = "전화번호를 입력해주세요")
-    @Pattern(regexp = "^010-\\d{4}-\\d{4}$", message = "올바른 전화번호 형식이 아닙니다 (예: 010-1234-5678)")
+    @Pattern(regexp = "^010\\d{8}$", message = "올바른 전화번호 형식이 아닙니다 (예: 010-1234-5678)")
     private String phoneNumber;
 }

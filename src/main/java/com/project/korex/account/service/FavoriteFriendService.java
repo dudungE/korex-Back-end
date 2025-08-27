@@ -14,7 +14,9 @@ import com.project.korex.common.exception.UserNotFoundException;
 import com.project.korex.transaction.service.TransactionService;
 import com.project.korex.user.entity.Users;
 import com.project.korex.user.repository.jpa.UserJpaRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -170,7 +172,7 @@ public class FavoriteFriendService {
      * FavoriteFriend를 FavoriteFriendResponse로 변환
      */
     private FavoriteFriendsResponseDto toFavoriteFriendResponse(FavoriteFriend favorite) {
-        Users friend = userRepository.findById(favorite.getId())
+        Users friend = userRepository.findById(favorite.getFriend().getId())
                 .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
 
         return FavoriteFriendsResponseDto.builder()

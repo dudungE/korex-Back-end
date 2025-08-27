@@ -44,10 +44,10 @@ public class FavoriteFriendController {
     @PostMapping
     public ResponseEntity<FavoriteFriendsResponseDto> addFavoriteFriend(
             @RequestBody @Valid AddFriendsRequestDto request,
-            CustomUserPrincipal customUserPrincipal) {
+            @AuthenticationPrincipal CustomUserPrincipal customUserPrincipal) {
         Long userId = customUserPrincipal.getUserId();
-        log.info("즐겨찾기 추가 요청 - 사용자 ID: {}, 닉네임: {}, 이름: {}, 전화번호: {}",
-                userId, request.getNickname(), request.getName(), request.getPhoneNumber());
+        log.info("즐겨찾기 추가 요청 - 사용자 ID: {}, 이름: {}, 전화번호: {}",
+                userId, request.getName(), request.getPhoneNumber());
 
         FavoriteFriendsResponseDto response = favoriteFriendService.addFavoriteFriend(userId, request);
 
@@ -61,7 +61,7 @@ public class FavoriteFriendController {
     @DeleteMapping("/{favoriteId}")
     public ResponseEntity<Void> deleteFavoriteFriend(
             @PathVariable Long favoriteId,
-            CustomUserPrincipal customUserPrincipal) {
+            @AuthenticationPrincipal CustomUserPrincipal customUserPrincipal) {
         Long userId = customUserPrincipal.getUserId();
         log.info("즐겨찾기 삭제 요청 - 사용자 ID: {}, 즐겨찾기 ID: {}", userId, favoriteId);
 
@@ -77,7 +77,7 @@ public class FavoriteFriendController {
     @PutMapping("/reorder")
     public ResponseEntity<Void> reorderFavorites(
             @RequestBody @Valid ReorderFavoriteRequestDto request,
-            CustomUserPrincipal customUserPrincipal) {
+            @AuthenticationPrincipal CustomUserPrincipal customUserPrincipal) {
         Long userId = customUserPrincipal.getUserId();
         log.info("즐겨찾기 순서 변경 요청 - 사용자 ID: {}, 순서: {}", userId, request.getFavoriteIds());
 

@@ -20,8 +20,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
      * 특정 사용자 간 마지막 송금일만 조회 (성능 최적화)
      */
     @Query("SELECT t.createdAt FROM Transaction t " +
-            "WHERE t.fromUser = :fromUserId " +
-            "AND t.toUser = :toUserId " +
+            "WHERE t.fromUser.id = :fromUserId " +
+            "AND t.toUser.id = :toUserId " +
             "AND t.transactionType = :transactionType " +
             "ORDER BY t.createdAt DESC " +
             "LIMIT 1")
