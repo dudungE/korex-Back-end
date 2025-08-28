@@ -8,15 +8,13 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
-public class TransferCalculationResponseDto {
-
-    private BigDecimal sendAmount;
-    private BigDecimal receiveAmount;
-    private BigDecimal exchangeRateApplied;
-    private BigDecimal feeAmount;
+public class ExchangeCalculationDto {
+    private BigDecimal exchangeRate;
+    private BigDecimal beforeFeeAmount;
+    private BigDecimal convertedAmount;
+    private BigDecimal fee;
     private BigDecimal totalDeductedAmount;
-    private String status;
 }

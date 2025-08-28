@@ -31,6 +31,8 @@ public interface UserJpaRepository extends JpaRepository<Users, Long> {
 
     boolean existsByName(String name);
 
+    Optional<Users> findByPhoneAndName(String phoneNumber, String name);
+
     long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
     long countByRestrictedFalseAndCreatedAtBetween(LocalDateTime start, LocalDateTime end);
     long countByRestrictedTrueAndRestrictedAtBetween(LocalDateTime start, LocalDateTime end);

@@ -18,12 +18,6 @@ public interface BalanceRepository extends JpaRepository<Balance, Long> {
 
     Optional<Balance> findByUserIdAndCurrency(Long userId, Currency currency);
 
-    @Modifying
-    @Query("UPDATE Balance b SET b.availableAmount = b.availableAmount - :amount WHERE b.id = :userId AND b.currency = :currencyCode")
-    void deductBalance(@Param("userId") Long userId, @Param("currencyCode") String currencyCode, @Param("amount") BigDecimal amount);
-
-    @Modifying
-    @Query("UPDATE Balance b SET b.availableAmount = b.availableAmount + :amount WHERE b.id = :userId AND b.currency = :currencyCode")
-    void addBalance(@Param("userId") Long userId, @Param("currencyCode") String currencyCode, @Param("amount") BigDecimal amount);
+    Optional<Balance> findByUserIdAndCurrencyCode(Long userId, String currencyCode);
 }
 
