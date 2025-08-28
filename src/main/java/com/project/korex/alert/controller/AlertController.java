@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/v1/alerts")
+@RequestMapping("/api/alerts")
 @RequiredArgsConstructor
 @Slf4j
 public class AlertController {
@@ -34,7 +34,7 @@ public class AlertController {
     /**
      * Create new alert
      */
-    @PostMapping
+    @PostMapping("/register")
     public ResponseEntity<ApiResponse<AlertResponseDto>> createAlert(
             @Valid @RequestBody AlertCreateRequestDto request,
             @AuthenticationPrincipal CustomUserPrincipal customUserPrincipal) {
@@ -77,7 +77,7 @@ public class AlertController {
     /**
      * Get user's active alerts
      */
-    @GetMapping("/my")
+    @GetMapping("/my/active")
     public ResponseEntity<ApiResponse<List<AlertResponseDto>>> getMyAlerts(
             @AuthenticationPrincipal CustomUserPrincipal customUserPrincipal) {
         try {
@@ -141,7 +141,7 @@ public class AlertController {
     /**
      * Get specific alert details
      */
-    @GetMapping("/{alertId}")
+    @GetMapping("/my/{alertId}")
     public ResponseEntity<ApiResponse<AlertResponseDto>> getAlert(
             @PathVariable Long alertId,
             @AuthenticationPrincipal CustomUserPrincipal customUserPrincipal) {
