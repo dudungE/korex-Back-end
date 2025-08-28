@@ -191,6 +191,7 @@ public class AuthService {
         log.info("회원가입 성공 ID : {}, loginId : {}", newUser.getId(), newUser.getLoginId());
     }
 
+    @Transactional(noRollbackFor = LoginFailedException.class)
     private String generateAccountNumber(String accountType) {
         Random random = new Random();
 
@@ -297,6 +298,7 @@ public class AuthService {
 
         // 사용자 정보 생성
         UserInfoDto userInfo = new UserInfoDto(
+                findUser.getId(),
                 findUser.getLoginId(),
                 findUser.getRole().getRoleName(),
                 emailVerified

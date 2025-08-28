@@ -36,4 +36,5 @@ public interface UserJpaRepository extends JpaRepository<Users, Long> {
     long countByRestrictedTrueAndRestrictedAtBetween(LocalDateTime start, LocalDateTime end);
 
     List<Users> findTop3ByRestrictedOrderByRestrictedAtDesc(boolean restricted);
+    Optional<Users> findByPhoneAndName(String phoneNumber, String name);
 }

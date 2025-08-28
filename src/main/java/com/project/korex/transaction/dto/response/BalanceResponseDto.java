@@ -3,6 +3,7 @@ package com.project.korex.transaction.dto.response;
 import com.project.korex.transaction.entity.Balance;
 import com.project.korex.transaction.entity.Currency;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -13,6 +14,7 @@ import java.util.Map;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class BalanceResponseDto {
     private String code;
     private String amount;

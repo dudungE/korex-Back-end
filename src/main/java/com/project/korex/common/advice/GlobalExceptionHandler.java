@@ -5,8 +5,10 @@ import com.project.korex.common.code.ErrorCode;
 import com.project.korex.common.dto.ErrorResponseDto;
 import com.project.korex.common.exception.InsufficientBalanceException;
 import com.project.korex.common.exception.UserNotFoundException;
+import com.project.korex.transaction.exception.CannotTransferToSelfException;
 import com.project.korex.support.exception.InquiryWithdrawConflictException;
 import com.project.korex.support.exception.InquiryNotFoundException;
+import com.project.korex.transaction.exception.ExchangeException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -55,7 +57,9 @@ public class GlobalExceptionHandler {
             VerificationTokenNotFoundException.class,
             InvalidVerificationCodeException.class,
             EmailNotVerifiedException.class,
-            InsufficientBalanceException.class
+            InsufficientBalanceException.class,
+            CannotTransferToSelfException.class,
+            ExchangeException.class
     })
     public ResponseEntity<ErrorResponseDto> handleBadRequestException(RuntimeException ex, HttpServletRequest request) {
         ErrorCode errorCode = getErrorCodeFromException(ex);
@@ -121,6 +125,7 @@ public class GlobalExceptionHandler {
         ErrorResponseDto response = ErrorResponseDto.of(errorCode, request.getRequestURI());
         return new ResponseEntity<>(response, errorCode.getStatus());
     }
+
 
     // ErrorCode 추출 헬퍼 메서드
     private ErrorCode getErrorCodeFromException(RuntimeException ex) {
