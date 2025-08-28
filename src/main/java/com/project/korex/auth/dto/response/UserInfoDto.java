@@ -9,6 +9,7 @@ import lombok.Data;
 @Schema(name = "UserInfo", description = "사용자 정보 DTO")
 public class UserInfoDto {
 
+    private Long id;
     @Schema(description = "로그인 ID", example = "user123", required = true)
     private String loginId;
     @Schema(description = "사용자 역할", example = "ROLE_USER", required = true)
