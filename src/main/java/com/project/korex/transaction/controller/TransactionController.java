@@ -1,5 +1,6 @@
 package com.project.korex.transaction.controller;
 
+import com.project.korex.transaction.dto.response.TransactionResponseDto;
 import com.project.korex.transaction.entity.Transaction;
 import com.project.korex.transaction.service.TransactionService;
 import lombok.RequiredArgsConstructor;
@@ -18,8 +19,8 @@ public class TransactionController {
     private final TransactionService transactionService;
 
     @GetMapping("/history/{userId}")
-    public ResponseEntity<List<Transaction>> getTransactionHistory(@PathVariable Long userId) {
-        List<Transaction> transactions = transactionService.getUserTransactions(userId);
+    public ResponseEntity<List<TransactionResponseDto>> getTransactionHistory(@PathVariable Long userId) {
+        List<TransactionResponseDto> transactions = transactionService.getUserTransactions(userId);
         return new ResponseEntity<>(transactions, HttpStatus.OK);
     }
 }

@@ -1,5 +1,6 @@
 package com.project.korex.transaction.service;
 
+import com.project.korex.transaction.dto.response.TransactionResponseDto;
 import com.project.korex.transaction.entity.Currency;
 import com.project.korex.transaction.entity.Transaction;
 import com.project.korex.transaction.enums.TransactionType;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -66,8 +68,34 @@ public class TransactionService {
     }
 
     @Transactional(readOnly = true)
-    public List<Transaction> getUserTransactions(Long userId) {
-        return transactionRepository.findByFromUserIdOrToUserIdOrderByCreatedAtDesc(userId, userId);
+    public List<TransactionResponseDto> getUserTransactions(Long userId) {
+        List<Transaction> transactions = transactionRepository.findByFromUserIdOrToUserIdOrderByCreatedAtDesc(userId, userId);
+
+        return transactions.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
+
+    private TransactionResponseDto convertToDto(Transaction transaction) {
+        return TransactionResponseDto.builder()
+                .id(transaction.getId())
+                .fromUserId(transaction.getFromUser() != null ? transaction.getFromUser().getId() : null)
+                .fromUserName(transaction.getFromUser() != null ? transaction.getFromUser().getName() : null)
+                .toUserId(transaction.getToUser() != null ? transaction.getToUser().getId() : null)
+                .toUserName(transaction.getToUser() != null ? transaction.getToUser().getName() : null)
+                .fromCurrencyCode(transaction.getFromCurrencyCode() != null ? transaction.getFromCurrencyCode().getCode() : null)
+                .fromCurrencyName(transaction.getFromCurrencyCode() != null ? transaction.getFromCurrencyCode().getCurrencyName() : null)
+                .toCurrencyCode(transaction.getToCurrencyCode() != null ? transaction.getToCurrencyCode().getCode() : null)
+                .toCurrencyName(transaction.getToCurrencyCode() != null ? transaction.getToCurrencyCode().getCurrencyName() : null)
+                .sendAmount(transaction.getSendAmount())
+                .receiveAmount(transaction.getReceiveAmount())
+                .feeAmount(transaction.getFeeAmount())
+                .totalDeductedAmount(transaction.getTotalDeductedAmount())
+                .transactionType(transaction.getTransactionType())
+                .status(transaction.getStatus())
+                .createdAt(transaction.getCreatedAt())
+                .build();
+    }
+
 }
 
