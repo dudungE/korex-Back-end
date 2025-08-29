@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>KOREX 환율 알림</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+</head>
+<body style="margin:0;padding:0;background:#f4f8fb;font-family:'Malgun Gothic','맑은 고딕',system-ui,-apple-system,Segoe UI,Roboto,Pretendard,'Noto Sans KR',Apple SD Gothic Neo,sans-serif;">
+<!-- full width wrapper -->
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f4f8fb;">
+    <tr>
+        <td align="center" style="padding:28px;">
+            <!-- card -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;background:#ffffff;border-radius:24px;box-shadow:0 4px 16px rgba(30,60,114,0.12);">
+
+                <!-- header / brand -->
+                <tr>
+                    <td align="left" style="padding:32px 32px 8px 32px;">
+                        <div style="display:inline-block;background:linear-gradient(135deg,#1e3c72 0%,#2a5298 100%);color:#ffffff;border-radius:12px;padding:8px 16px;font-size:14px;font-weight:700;">환율 알림</div>
+                        <div style="margin-top:20px;font-size:28px;line-height:1.2;font-weight:800;color:#1e3c72;">
+                            KOREX
+                        </div>
+                        <div style="margin-top:6px;font-size:15px;color:#666;font-weight:500;">실시간 환율 알림 서비스</div>
+                    </td>
+                </tr>
+
+                <!-- greeting -->
+                <tr>
+                    <td style="padding:24px 32px 0 32px;color:#1e3c72;line-height:1.4;font-size:18px;font-weight:600;">
+                        안녕하세요 <strong th:text="${#strings.defaultString(userName,'고객')}">김코사</strong>님!
+                    </td>
+                </tr>
+
+                <!-- alert banner -->
+                <tr>
+                    <td style="padding:20px 32px;">
+                        <div style="background:linear-gradient(135deg,#ff6b6b 0%,#ee5a24 100%);color:#ffffff;padding:20px;border-radius:16px;text-align:center;font-size:16px;font-weight:700;">
+                            🚨 설정하신 환율 알림이 발생했습니다! 💰
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- details section -->
+                <tr>
+                    <td style="padding:0 32px 20px 32px;">
+                        <div style="background:#f8f9fb;border:1px solid #e9ecef;border-radius:16px;padding:28px;">
+                            <div style="font-size:18px;font-weight:700;color:#1e3c72;margin-bottom:24px;">
+                                📊 알림 상세 정보
+                            </div>
+
+                            <!-- details grid -->
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                                <tr>
+                                    <td width="50%" style="padding:0 8px 16px 0;">
+                                        <div style="font-size:12px;color:#666;margin-bottom:6px;font-weight:600;">통화</div>
+                                        <div style="font-size:18px;color:#1e3c72;font-weight:700;" th:text="${currencyCode}">USD</div>
+                                    </td>
+                                    <td width="50%" style="padding:0 0 16px 8px;">
+                                        <div style="font-size:12px;color:#666;margin-bottom:6px;font-weight:600;">현재 환율</div>
+                                        <div style="font-size:20px;color:#27ae60;font-weight:800;" th:text="${#numbers.formatDecimal(currentRate, 1, 2)} + '원'">5,555.00원</div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:0 8px 16px 0;">
+                                        <div style="font-size:12px;color:#666;margin-bottom:6px;font-weight:600;">목표 환율</div>
+                                        <div style="font-size:16px;color:#333;font-weight:700;" th:text="${#numbers.formatDecimal(targetRate, 1, 2)} + '원'">1,111.00원</div>
+                                    </td>
+                                    <td style="padding:0 0 16px 8px;">
+                                        <div style="font-size:12px;color:#666;margin-bottom:6px;font-weight:600;">알림 조건</div>
+                                        <div style="font-size:16px;color:#e67e22;font-weight:700;" th:text="${#numbers.formatDecimal(targetRate, 1, 2)} + '원 ' + ${conditionText}">1,111.00원 이상</div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" style="padding-top:8px;border-top:1px solid #e9ecef;">
+                                        <div style="font-size:12px;color:#666;margin-bottom:6px;font-weight:600;">알림 시간</div>
+                                        <div style="font-size:16px;color:#333;font-weight:600;" th:text="${alertTime}">2025년 8월 26일 17시 19분</div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- cta section -->
+                <tr>
+                    <td align="center" style="padding:20px 32px 32px 32px;">
+                        <p style="margin:0 0 20px 0;color:#666;font-size:15px;line-height:1.5;">
+                            지금 바로 실시간 환율을 확인하고 거래를 시작하세요!
+                        </p>
+                        <a href="#" style="display:inline-block;background:linear-gradient(135deg,#1e3c72 0%,#2a5298 100%);color:#ffffff;padding:16px 32px;border-radius:25px;font-size:16px;font-weight:700;text-decoration:none;transition:transform 0.2s ease;">
+                            KOREX 앱 열기
+                        </a>
+                    </td>
+                </tr>
+
+                <!-- footer -->
+                <tr>
+                    <td align="center" style="padding:24px 32px 32px 32px;color:#95a5a6;font-size:13px;border-top:1px solid #f0f0f0;">
+                        <p style="margin:0 0 8px 0;">
+                            <strong style="color:#1e3c72;">KOREX</strong>를 이용해주셔서 감사합니다.
+                        </p>
+                        <p style="margin:0;">
+                            © KOREX. All rights reserved.<br/>
+                            문의: <span th:text="${#strings.defaultString(supportEmail,'support@korex.com')}">support@korex.com</span>
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

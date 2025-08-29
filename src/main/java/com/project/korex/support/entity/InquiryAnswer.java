@@ -23,4 +23,11 @@ public class InquiryAnswer extends BaseEntity {
 
     @Column(nullable = false)
     private Long adminId;
+
+    @Builder
+    public InquiryAnswer(Inquiry inquiry, String content, Long adminId) {
+        this.inquiry = inquiry;
+        this.content = content;
+        this.adminId = adminId;
+    }
 }
