@@ -108,8 +108,6 @@ public class NaverNewsApiService {
                 }
             }
 
-            System.out.println("number of API new: " + newsList.size());
-
         } catch (Exception e) {
             System.err.println("네이버 뉴스 API 호출 실패: " + e.getMessage());
             e.printStackTrace();
