@@ -42,7 +42,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+                                                                                throws ServletException, IOException {
 
         String uri = request.getRequestURI();
 
@@ -75,28 +76,35 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             CustomUserPrincipal userDetails = (CustomUserPrincipal) customUserDetailsService.loadUserByUsername(loginId);
 
             if (userDetails != null) {
+                List<GrantedAuthority> authorities = new ArrayList<>(userDetails.getAuthorities());
+
+                // 이메일 인증 여부
                 boolean emailVerified = false;
                 String email = userDetails.getEmail();
                 if (email != null && !email.isBlank()) {
                     emailVerified = emailVerificationTokenRepository
                             .existsByEmailAndPurposeAndVerifiedTrue(email, VerificationPurpose.SIGN_UP);
                 }
-
-                List<GrantedAuthority> authorities = new ArrayList<>(userDetails.getAuthorities());
                 if (emailVerified) {
                     authorities.add(new SimpleGrantedAuthority("VERIFIED"));
+                }
+
+                // RESTRICTED 계정은 로그인 허용하되 별도 권한 부여
+                if (userDetails.isRestricted()) {
+                    authorities.add(new SimpleGrantedAuthority("RESTRICTED"));
+                    log.warn("제한된 계정 로그인: {}", loginId);
                 }
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-//                Authentication authentication =
+                //                Authentication authentication =
 //                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 
                 // SecurityContext에 Authentication 객체를 저장
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.info("Security Context에 '{}' 인증 정보를 저장했습니다, uri: {}", authentication.getName(), request.getRequestURI());
+                log.info("Security Context에 '{}' 인증 정보를 저장했습니다 (이메일 인증:{}, restricted:{}), uri: {}",
+                        authentication.getName(), emailVerified, userDetails.isRestricted(), request.getRequestURI());
             }
         }
 

@@ -39,40 +39,13 @@ public class CustomUserPrincipal implements UserDetails{
 
     //loginId 반환
     public String getName() {
-        if (registrationId == null) {
             return user.getLoginId();
-        }
-        switch (registrationId) {
-            case "naver":
-                Map<String, Object> response = (Map<String, Object>) attributes.get(attributeKey);
-                return (String) response.get("id");
-            case "google":
-                return (String) attributes.get(attributeKey);
-            case "kakao":
-                return attributes.get(attributeKey).toString();
-            default:
-                return null;
-        }
     }
 
     //name 반환
     @Override
     public String getUsername() {
-        if (registrationId == null) {
             return user.getName();
-        }
-        switch (registrationId) {
-            case "google":
-                return (String) attributes.get("name");
-            case "kakao":
-                Map<String, Object> kakaoAccount = (Map<String, Object>)  attributes.get("properties");
-                return (String) kakaoAccount.get("nickname"); // 추후 name변경
-            case "naver":
-                Map<String, Object> response = (Map<String, Object>) attributes.get(attributeKey);
-                return (String) response.get("name");
-            default:
-                return null;
-        }
     }
 
     public String getEmail() {
@@ -83,6 +56,10 @@ public class CustomUserPrincipal implements UserDetails{
     @Override
     public String getPassword() {
         return null;
+    }
+
+    public boolean isRestricted() {
+        return Boolean.TRUE.equals(user.isRestricted());
     }
 
     @Override

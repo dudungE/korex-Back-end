@@ -30,5 +30,5 @@ public class MyInfoResponseDto {
     private boolean emailVerified;
 
     @NotBlank
-    private Role role;
+    private String roleName;
 }
