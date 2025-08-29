@@ -64,6 +64,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/balance/**", "/api/transfer/currencies", "/api/transfer/execute", "/api/transfer/currencies").permitAll()
                         .requestMatchers("/api/user/exists/**", "/api/user/verify-recipient").permitAll()
                         .requestMatchers("/api/ForeignTransfer/recipients/**").authenticated()
+                        .requestMatchers("/api/foreign-transfer/terms/**").authenticated()
                         .anyRequest().authenticated());
         http
                 .sessionManagement((session) -> session

@@ -10,7 +10,6 @@ import java.util.Optional;
 @Repository
 public interface CurrencyRepository extends JpaRepository<Currency, String> {
     List<Currency> findAllByOrderByCode();
-    Optional<Currency> findByCurrencyName(String currencyName);
-
+    Optional<Currency> findByCode(String code);
 }
 

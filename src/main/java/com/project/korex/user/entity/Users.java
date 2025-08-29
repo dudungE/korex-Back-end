@@ -44,6 +44,9 @@ public class Users extends BaseEntity {
     @Column(name = "transaction_password", length = 4)
     private String transactionPassword;
 
+    @Column(name = "account_password", length = 4)
+    private String accountPassword;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id")
     private Role role; // 회원 권한 (USER, ADMIN)
@@ -52,7 +55,7 @@ public class Users extends BaseEntity {
     private List<RefreshToken> refreshTokens = new ArrayList<>();
 
     @Builder
-    private Users(String loginId, String password, String name, String email, String phone, String birth, String krwAccount, String foreignAccount, String transactionPassword, Role role) {
+    private Users(String loginId, String password, String name, String email, String phone, String birth, String krwAccount, String foreignAccount, String transactionPassword, String accountPassword ,Role role) {
         this.loginId = loginId;
         this.password = password;
         this.name = name;
@@ -62,6 +65,7 @@ public class Users extends BaseEntity {
         this.krwAccount = krwAccount;
         this.foreignAccount = foreignAccount;
         this.transactionPassword = transactionPassword;
+        this.accountPassword = accountPassword;
         this.role = role;
     }
 

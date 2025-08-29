@@ -11,7 +11,7 @@
   @Table(name = "ForeignTransferRecipient")
   @Getter
   @Setter
-  public class ForeignTransferRecipient extends BaseEntity {
+  public class Recipient extends BaseEntity {
 
       @Id
       @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,7 +23,7 @@
       private Users user;
 
       @ManyToOne
-      @JoinColumn(name = "currency_name")
+      @JoinColumn(name = "currency_code", nullable = false)
       private Currency currency;
 
       @Column(name = "name")
@@ -50,7 +50,7 @@
       @Column(name = "eng_address")
       private String engAddress;
 
-      @Column(name = "relation_recipient")
-      private String relationRecipient;
+      @Column(name = "is_active")
+      private Boolean isActive = true;  // 기본값 true
 
   }
