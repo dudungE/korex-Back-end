@@ -63,6 +63,7 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/balance/**", "/api/transfer/currencies", "/api/transfer/execute", "/api/transfer/currencies").permitAll()
                         .requestMatchers("/api/user/exists/**", "/api/user/verify-recipient").permitAll()
+                        .requestMatchers("/api/transaction/**").permitAll()
                         .requestMatchers("/api/favorites").permitAll()
                         .requestMatchers("/api/ForeignTransfer/recipients/**").authenticated()
                         .anyRequest().authenticated());
