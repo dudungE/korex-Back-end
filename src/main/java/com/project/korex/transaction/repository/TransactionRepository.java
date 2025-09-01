@@ -25,7 +25,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             "WHERE t.fromUser.id = :fromUserId " +
             "AND t.toUser.id = :toUserId " +
             "AND t.transactionType = :transactionType " +
-            "ORDER BY t.createdAt DESC")
+            "ORDER BY t.createdAt DESC LIMIT 1")
     Optional<LocalDateTime> findLastTransferDate(
             @Param("fromUserId") Long fromUserId,
             @Param("toUserId") Long toUserId,
