@@ -38,6 +38,11 @@ public class Balance {
     @Column(name = "account_type")
     private AccountType accountType;
 
+    @Column(name = "krw_account")
+    private String krwAccountNumber;
+
+    @Column(name = "foreign_account")
+    private String foreignAccount;
 
     @Builder
     public Balance(Long id, Users user, Currency currency, BigDecimal availableAmount, BigDecimal heldAmount, AccountType accountType) {

@@ -50,6 +50,9 @@ public class Users extends BaseEntity {
     @Column(name = "transaction_password", length = 4)
     private String transactionPassword;
 
+    @Column(name = "account_password", length = 4)
+    private String accountPassword;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id")
     private Role role; // 회원 권한 (USER, ADMIN)

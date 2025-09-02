@@ -42,8 +42,8 @@ public enum ErrorCode {
   TRANSFER_NOT_SELF(HttpStatus.BAD_REQUEST, "B003", "본인에게 송금할 수 없습니다."),
 
     // Support (SXXX)
-    INQUIRY_NOT_FOUND(HttpStatus.NOT_FOUND, "S001", "문의 내역을 찾을 수 없습니다."),
-    INQUIRY_WITHDRAW_CONFLICT(HttpStatus.CONFLICT, "S002", "문의 철회가 불가능한 상태입니다."),
+//    INQUIRY_NOT_FOUND(HttpStatus.NOT_FOUND, "S001", "문의 내역을 찾을 수 없습니다."),
+//    INQUIRY_WITHDRAW_CONFLICT(HttpStatus.CONFLICT, "S002", "문의 철회가 불가능한 상태입니다."),
  
     // ForeignTransfer
     CURRENCY_NOT_FOUND(HttpStatus.NOT_FOUND, "F001", "해당 통화를 찾을 수 없습니다."),
