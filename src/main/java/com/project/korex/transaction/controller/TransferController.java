@@ -19,13 +19,6 @@ import java.util.List;
 public class TransferController {
 
     private final TransferService transferService;
-    private final CurrencyRepository currencyRepository;
-
-    @GetMapping("/currencies")
-    public ResponseEntity<List<Currency>> getSupportedCurrencies() {
-        List<Currency> currencies = currencyRepository.findAllByOrderByCode();
-        return new ResponseEntity<>(currencies, HttpStatus.OK);
-    }
 
     @PostMapping("/execute")
     public ResponseEntity<TransferResponseDto> executeTransfer(
