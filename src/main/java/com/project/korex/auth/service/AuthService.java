@@ -239,6 +239,7 @@ public class AuthService {
                 .build();
     }
 
+    @Transactional(noRollbackFor = LoginFailedException.class)
     public Map<String, Object> login(LoginRequestDto loginRequestDto) {
         String loginId = loginRequestDto.getLoginId();
         Users findUser = userJpaRepository.findByLoginId(loginId)

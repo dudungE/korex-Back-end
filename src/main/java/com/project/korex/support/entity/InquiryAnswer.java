@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 public class InquiryAnswer extends BaseEntity {
@@ -29,5 +30,4 @@ public class InquiryAnswer extends BaseEntity {
         this.content = content;
         this.adminId = adminId;
     }
-
 }

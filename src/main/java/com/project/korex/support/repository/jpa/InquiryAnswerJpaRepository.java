@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface InquiryAnswerJpaRepository extends JpaRepository<InquiryAnswer, Long> {
     boolean existsByInquiry(Inquiry inquiry);
+    boolean existsByInquiryId(Long inquiryId);
 }
