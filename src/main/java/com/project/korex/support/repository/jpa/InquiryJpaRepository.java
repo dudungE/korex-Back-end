@@ -32,4 +32,5 @@ public interface InquiryJpaRepository extends JpaRepository<Inquiry, Long> {
     long countByStatusAndCreatedAtBetween(InquiryStatus status, LocalDateTime start, LocalDateTime end);
 
     List<Inquiry> findByStatus(InquiryStatus status);
+
 }
