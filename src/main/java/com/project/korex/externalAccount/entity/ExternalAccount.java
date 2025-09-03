@@ -17,14 +17,14 @@ import java.math.BigDecimal;
 public class ExternalAccount extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long externalAccountId;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "users")
+    @JoinColumn(name = "user_id")
     private Users user; // 기존 Users 테이블과 연결
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "bank")
+    @JoinColumn(name = "bank_code")
     private Bank bankCode; // Bank 테이블과 연결
 
     @Column(nullable = false, length = 30)
@@ -38,8 +38,5 @@ public class ExternalAccount extends BaseEntity {
 
     @Column(nullable = false)
     private Boolean isPrimary = false; // 주계좌 여부
-
-    @Column(nullable = false)
-    private Boolean isActive = true;
 }
 

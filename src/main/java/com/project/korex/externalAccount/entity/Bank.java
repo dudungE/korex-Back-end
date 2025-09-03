@@ -1,5 +1,6 @@
 package com.project.korex.externalAccount.entity;
 
+import com.project.korex.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -9,11 +10,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "banks")
+@Table(name = "bank")
 @Getter
 @Setter
 @NoArgsConstructor
-public class Bank {
+public class Bank extends BaseEntity {
     @Id
     @Column(length = 3)
     private String bankCode; // '004', '088' 등
