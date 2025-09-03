@@ -16,5 +16,5 @@ public class FileUploadResponse {
     private String fileUrl;               // 접근 가능한 URL
     private long fileSize;                 // 파일 크기 (byte)
     private String contentType;           // MIME 타입
-    private LocalDateTime uploadAt;       // 업로드 시각
+    private LocalDateTime uploadedAt;       // 업로드 시각
 }

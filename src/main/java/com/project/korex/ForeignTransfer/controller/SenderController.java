@@ -19,21 +19,17 @@ public class SenderController {
 
     private final SenderService senderService;
 
-    @Operation(summary = "송금인 등록 및 파일 업로드",
-            description = "토큰 기반 사용자 정보를 이용하여 송금인 정보를 등록하고 필요한 파일을 업로드합니다.")
     @PostMapping("/create")
     public ResponseEntity<SenderResponse> createSender(
             @AuthenticationPrincipal CustomUserPrincipal principal,
-            @ModelAttribute SenderRequest request // DTO + MultipartFile 자동 바인딩
+            @ModelAttribute SenderRequest request
     ) {
         if (principal == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        Long userId = principal.getUserId();
-
-        // 서비스에서 Sender 엔티티 반환
-        Sender sender = senderService.createSender(userId, request);
+        String loginId = principal.getName();
+        Sender sender = senderService.createSenderWithTransaction(loginId, request);
 
         SenderResponse response = new SenderResponse();
         response.setId(sender.getId());
@@ -51,6 +47,5 @@ public class SenderController {
         response.setRelationDocumentFilePath(sender.getRelationDocumentFilePath());
 
         return ResponseEntity.ok(response);
-
     }
 }

@@ -4,6 +4,8 @@ import com.project.korex.ForeignTransfer.dto.request.SenderTransferRequest;
 import com.project.korex.ForeignTransfer.dto.response.SenderTransferResponse;
 import com.project.korex.ForeignTransfer.entity.ForeignTransferTransaction;
 import com.project.korex.ForeignTransfer.entity.Sender;
+import com.project.korex.ForeignTransfer.enums.RequestStatus;
+import com.project.korex.ForeignTransfer.enums.TransferStatus;
 import com.project.korex.ForeignTransfer.repository.ForeignTransferTransactionRepository;
 import com.project.korex.transaction.dto.response.ExchangeSimulationDto;
 import com.project.korex.transaction.entity.Balance;
@@ -15,6 +17,7 @@ import com.project.korex.user.repository.jpa.UserJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -27,47 +30,50 @@ public class ForeignTransferService {
     private final BalanceRepository balanceRepository;
     private final ForeignTransferTransactionRepository transactionRepository;
     private final ExchangeService exchangeService;
+    private final FileUploadService fileUploadService;
 
-    // ────────────────────────────────
-    // 송금 신청 단계 (환전 적용 포함)
     @Transactional
     public SenderTransferResponse createForeignTransfer(String loginId, SenderTransferRequest dto) {
+        // 1️⃣ 유저 조회
         Users user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
 
+        // 2️⃣ 금액 & 계좌 설정
         BigDecimal transferAmount = dto.getTransferAmount();
+        BigDecimal convertedAmount = transferAmount;
+        BigDecimal appliedRate = null;
+        AccountType type = dto.getAccountType() != null ? dto.getAccountType() : AccountType.KRW;
 
-        // 1️⃣ 원화 계좌 확인
         Balance krwBalance = balanceRepository.findByUserIdAndAccountType(user.getId(), AccountType.KRW)
                 .orElseThrow(() -> new RuntimeException("원화 계좌가 없습니다."));
 
-        BigDecimal convertedAmount = null;
-        BigDecimal appliedRate = null;
+        Balance targetBalance = null;
 
-        // 2️⃣ 환전 적용
-        if (dto.getAccountType() == AccountType.FOREIGN && !"KRW".equals(dto.getCurrencyCode())) {
-            // 환전 서비스 호출
-            ExchangeSimulationDto simulation = exchangeService.simulateExchange(
-                    "KRW", dto.getCurrencyCode(), transferAmount
-            );
-
-            appliedRate = simulation.getExchangeRate();
-            convertedAmount = simulation.getToAmount(); // 여기서 환전 후 금액 가져오기
-
-            // 잔액 차감 (KRW → 외화)
-            if (krwBalance.getAvailableAmount().compareTo(transferAmount) < 0) {
-                throw new RuntimeException("원화 잔액 부족");
-            }
-            krwBalance.setAvailableAmount(krwBalance.getAvailableAmount().subtract(transferAmount));
-            krwBalance.setHeldAmount(krwBalance.getHeldAmount().add(transferAmount));
-
-            // 외화 계좌에 환전 금액 추가
-            Balance fxBalance = balanceRepository.findByUserIdAndCurrency_Code(user.getId(), dto.getCurrencyCode())
+        // 3️⃣ 외화 계좌 처리
+        if (type == AccountType.FOREIGN && dto.getCurrencyCode() != null) {
+            targetBalance = balanceRepository.findByUserIdAndCurrency_Code(user.getId(), dto.getCurrencyCode())
                     .orElseThrow(() -> new RuntimeException(dto.getCurrencyCode() + " 외화 계좌가 없습니다."));
-            fxBalance.setAvailableAmount(fxBalance.getAvailableAmount().add(convertedAmount));
+
+            if (!"KRW".equals(dto.getCurrencyCode())) {
+                ExchangeSimulationDto simulation = exchangeService.simulateExchange("KRW", dto.getCurrencyCode(), transferAmount);
+                appliedRate = simulation.getExchangeRate();
+                convertedAmount = simulation.getToAmount();
+
+                if (krwBalance.getAvailableAmount().compareTo(transferAmount) < 0) {
+                    throw new RuntimeException("원화 잔액 부족");
+                }
+                krwBalance.setAvailableAmount(krwBalance.getAvailableAmount().subtract(transferAmount));
+                krwBalance.setHeldAmount(krwBalance.getHeldAmount().add(transferAmount));
+            }
+
+            if (targetBalance.getAvailableAmount().compareTo(convertedAmount) < 0) {
+                throw new RuntimeException(dto.getCurrencyCode() + " 잔액 부족");
+            }
+            targetBalance.setAvailableAmount(targetBalance.getAvailableAmount().subtract(convertedAmount));
+            targetBalance.setHeldAmount(targetBalance.getHeldAmount().add(convertedAmount));
         }
 
-        // 3️⃣ 송금 트랜잭션 생성
+        // 4️⃣ 트랜잭션 생성
         ForeignTransferTransaction transaction = ForeignTransferTransaction.builder()
                 .transferAmount(transferAmount)
                 .accountPassword(dto.getAccountPassword())
@@ -75,26 +81,51 @@ public class ForeignTransferService {
                 .user(user)
                 .krwNumber(user.getKrwAccount())
                 .foreignNumber(user.getForeignAccount())
-                .requestStatus(ForeignTransferTransaction.RequestStatus.PENDING)
-                .transferStatus(ForeignTransferTransaction.TransferStatus.NOT_STARTED)
+                .requestStatus(RequestStatus.PENDING)
+                .transferStatus(TransferStatus.NOT_STARTED)
                 .createdAt(LocalDateTime.now())
+                .convertedAmount(convertedAmount)
+                .exchangeRate(appliedRate)
+                .staffMessage(dto.getStaffMessage())
                 .build();
 
+        // 5️⃣ Sender 생성
+        BigDecimal availableBalance = type == AccountType.KRW
+                ? krwBalance.getAvailableAmount()
+                : (targetBalance != null ? targetBalance.getAvailableAmount() : BigDecimal.ZERO);
+
         Sender sender = Sender.builder()
+                .user(user)
+                .foreignTransferTransaction(transaction) // 양방향 설정
                 .name(dto.getSenderName())
                 .transferReason(dto.getTransferReason())
-                .foreignTransferTransaction(transaction)
+                .countryNumber(dto.getCountryNumber())
+                .phoneNumber(dto.getPhoneNumber())
+                .email(dto.getEmail())
+                .country(dto.getCountry())
+                .engAddress(dto.getEngAddress())
+                .relationRecipient(dto.getRelationRecipient())
+                .accountType(type.name())
+                .accountNumber(dto.getAccountNumber())
+                .availableBalance(availableBalance)
+                .transferAmount(transferAmount)
+                .withdrawalMethod(dto.getWithdrawalMethod())
+                .idFilePath(saveFilePath(transaction, dto.getIdFile(), "ID"))
+                .proofDocumentFilePath(saveFilePath(transaction, dto.getProofDocumentFile(), "PROOF"))
+                .relationDocumentFilePath(saveFilePath(transaction, dto.getRelationDocumentFile(), "RELATION"))
                 .build();
 
         transaction.setSender(sender);
+
+        // 6️⃣ 트랜잭션 + sender 저장 (cascade로 한번에 저장)
         transactionRepository.save(transaction);
 
-        // 4️⃣ DTO 반환
+        // 7️⃣ Response 반환
         return SenderTransferResponse.builder()
                 .transferId(transaction.getId())
                 .senderId(sender.getId())
-                .accountType(dto.getAccountType().name())
-                .availableBalance(krwBalance.getAvailableAmount())
+                .accountType(type.name())
+                .availableBalance(sender.getAvailableBalance())
                 .transferAmount(transferAmount)
                 .convertedAmount(convertedAmount)
                 .appliedRate(appliedRate)
@@ -105,5 +136,11 @@ public class ForeignTransferService {
                 .transferStatus(transaction.getTransferStatus().name())
                 .createdAt(transaction.getCreatedAt())
                 .build();
+    }
+
+    // 파일 업로드
+    private String saveFilePath(ForeignTransferTransaction transaction, MultipartFile file, String fileType) {
+        if (file == null || file.isEmpty()) return null;
+        return fileUploadService.uploadFileToTransaction(transaction, file, fileType).getFileUrl();
     }
 }

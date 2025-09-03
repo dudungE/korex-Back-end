@@ -2,6 +2,8 @@
 package com.project.korex.ForeignTransfer.service;
 
 import com.project.korex.ForeignTransfer.entity.ForeignTransferTransaction;
+import com.project.korex.ForeignTransfer.enums.RequestStatus;
+import com.project.korex.ForeignTransfer.enums.TransferStatus;
 import com.project.korex.transaction.entity.Transaction;
 import com.project.korex.transaction.enums.TransactionType;
 import com.project.korex.transaction.repository.TransactionRepository;
@@ -31,9 +33,8 @@ public class ForeignTransferTransactionFactory {
         ForeignTransferTransaction transaction = ForeignTransferTransaction.builder()
                 .transaction(generalTransaction)
                 .user(user)
-                .requestStatus(ForeignTransferTransaction.RequestStatus.NOT_STARTED)
-                .transferStatus(ForeignTransferTransaction.TransferStatus.NOT_STARTED)
-                .bankName(bankName)
+                .requestStatus(RequestStatus.NOT_STARTED)
+                .transferStatus(TransferStatus.NOT_STARTED)
                 .krwNumber(krwNumber)
                 .foreignNumber(foreignNumber)
                 .accountPassword(accountPassword)

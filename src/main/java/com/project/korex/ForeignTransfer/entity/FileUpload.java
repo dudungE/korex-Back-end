@@ -3,6 +3,8 @@ package com.project.korex.ForeignTransfer.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
@@ -10,6 +12,7 @@ import java.time.LocalDateTime;
 @Table(name = "ForeignTransferFileUpload")
 @Getter
 @Setter
+@EntityListeners(AuditingEntityListener.class)
 public class FileUpload {
 
     @Id
@@ -39,6 +42,7 @@ public class FileUpload {
     @Column(name = "content_type")
     private String contentType;
 
-    @Column(name = "uploaded_at")
+    @CreatedDate
+    @Column(updatable = false)
     private LocalDateTime uploadedAt;
 }

@@ -20,11 +20,11 @@ public class Sender {
     @Column(name = "sender_id")
     private Long id;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "transfer_id")
     private ForeignTransferTransaction foreignTransferTransaction;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private Users user;
 
@@ -65,19 +65,19 @@ public class Sender {
     private String relationDocumentFilePath;
 
     @Column(name = "account_type")
-    private String accountType; // KRW, USD 등
+    private String accountType;
 
     @Column(name = "account_number")
-    private String accountNumber; // 선택 계좌
+    private String accountNumber;
 
     @Column(name = "available_balance", precision = 18, scale = 4)
-    private BigDecimal availableBalance; // 잔액 확인용
+    private BigDecimal availableBalance;
 
     @Column(name = "transfer_amount", precision = 18, scale = 4)
-    private BigDecimal transferAmount; // 출금 금액
+    private BigDecimal transferAmount;
 
     @Column(name = "withdrawal_method")
-    private String withdrawalMethod; // 예: 계좌이체, 온라인뱅킹 등
+    private String withdrawalMethod;
 
     // 편의 메서드: ForeignTransferTransaction과 양방향 설정
     public void setForeignTransferTransaction(ForeignTransferTransaction transaction) {

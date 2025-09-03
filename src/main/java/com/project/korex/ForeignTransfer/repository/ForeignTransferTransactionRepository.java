@@ -10,10 +10,4 @@ import java.util.Optional;
 
 @Repository
 public interface ForeignTransferTransactionRepository extends JpaRepository<ForeignTransferTransaction, Long> {
-
-    // 거래 ID로 특정 외화 송금 거래를 조회
-    Optional<ForeignTransferTransaction> findById(Long id);
-
-    Optional<ForeignTransferTransaction> findByUserAndTransferStatusNot(Users user, ForeignTransferTransaction.TransferStatus status);
-
 }

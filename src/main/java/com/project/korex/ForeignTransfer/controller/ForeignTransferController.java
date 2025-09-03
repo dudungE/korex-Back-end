@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/foreign-transfer")
@@ -20,15 +21,14 @@ public class ForeignTransferController {
     @PostMapping("/request")
     public ResponseEntity<SenderTransferResponse> requestTransfer(
             @AuthenticationPrincipal CustomUserPrincipal principal,
-            @RequestBody SenderTransferRequest request) {
-
+            @ModelAttribute SenderTransferRequest request // MultipartFile 포함
+    ) {
         if (principal == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        String loginId = principal.getName(); // JWT에서 추출된 사용자 정보
+        String loginId = principal.getName();
         SenderTransferResponse response = foreignTransferService.createForeignTransfer(loginId, request);
         return ResponseEntity.ok(response);
     }
-
 }

@@ -1,5 +1,7 @@
 package com.project.korex.ForeignTransfer.entity;
 
+import com.project.korex.ForeignTransfer.enums.RequestStatus;
+import com.project.korex.ForeignTransfer.enums.TransferStatus;
 import com.project.korex.transaction.entity.Transaction;
 import com.project.korex.user.entity.Users;
 import jakarta.persistence.*;
@@ -28,15 +30,7 @@ public class ForeignTransferTransaction {
     @Column(name = "transfer_id")
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinColumn(name = "transaction_id", nullable = false)
-    private Transaction transaction;
-
-    @OneToOne
-    @JoinColumn(name = "recipient_id")
-    private Recipient recipient;
-
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private Users user;
 
@@ -46,11 +40,30 @@ public class ForeignTransferTransaction {
     @OneToOne(mappedBy = "foreignTransferTransaction", cascade = CascadeType.ALL, orphanRemoval = true)
     private TermsAgreement termsAgreement;
 
-    @OneToMany(mappedBy = "foreignTransferTransaction", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<FileUpload> fileUploads = new ArrayList<>();
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "transaction_id", nullable = false)
+    private Transaction transaction;
 
-    @Column(name = "fee_amount", precision = 18, scale = 4)
-    private BigDecimal feeAmount;
+    @Column(name = "transfer_amount", precision = 18, scale = 4)
+    private BigDecimal transferAmount;
+
+    @Column(name = "krw_number")
+    private String krwNumber;
+
+    @Column(name = "foreign_number")
+    private String foreignNumber;
+
+    @Column(name = "account_password")
+    private String accountPassword;
+
+    @Column(name = "converted_amount", precision = 18, scale = 4)
+    private BigDecimal convertedAmount;
+
+    @Column(name = "exchange_rate", precision = 18, scale = 6)
+    private BigDecimal exchangeRate;
+
+    @Column(name = "staff_message")
+    private String staffMessage;
 
     @Column(name = "relation_recipient")
     private String relationRecipient;
@@ -70,36 +83,6 @@ public class ForeignTransferTransaction {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    @Column(name = "estimated_arrival_date")
-    private LocalDateTime estimatedArrivalDate; // 서비스에서 세팅
-
-    @Column(name = "actual_arrival_date")
-    private LocalDateTime actualArrivalDate; // 서비스에서 세팅
-
-    @Column(name = "transfer_amount")
-    private BigDecimal transferAmount;
-
-    @Column(name = "bank_name")
-    private String bankName;
-
-    @Column(name = "krw_number")
-    private String krwNumber;
-
-    @Column(name = "foreign_number")
-    private String foreignNumber;
-
-    @Column(name = "account_password")
-    private String accountPassword;
-
-    @Column(name = "converted_amount", precision = 18, scale = 4)
-    private BigDecimal convertedAmount; // 환전 적용 금액
-
-    @Column(name = "exchange_rate", precision = 18, scale = 6)
-    private BigDecimal exchangeRate; // 적용 환율
-
-    @Column(name = "staff_message")
-    private String staffMessage;
-
     // 편의 메서드: Sender와 양방향 관계 설정
     public void setSender(Sender sender) {
         this.sender = sender;
@@ -108,19 +91,10 @@ public class ForeignTransferTransaction {
         }
     }
 
-    // 상태 Enum
-    public enum RequestStatus {
-        NOT_STARTED, // 송금 요청 전
-        PENDING, // 송금 요청 생성, 약관 동의 대기
-        APPROVED, // 약관 동의 및 해외송금 트랜잭션 생성
-        SUBMITTED // 송금 요청 완료
-    }
-
-    // 상태 Enum
-    public enum TransferStatus {
-        NOT_STARTED, // 송금 진행 전
-        IN_PROGRESS, // 송금 처리 중
-        COMPLETED, // 송금 성공
-        FAILED // 송금 실패
+    public void setTermsAgreement(TermsAgreement agreement) {
+        this.termsAgreement = agreement;
+        if (agreement.getForeignTransferTransaction() != this) {
+            agreement.setForeignTransferTransaction(this);
+        }
     }
 }
