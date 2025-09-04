@@ -3,6 +3,7 @@ package com.project.korex.ForeignTransfer.entity;
 import com.project.korex.ForeignTransfer.enums.RequestStatus;
 import com.project.korex.ForeignTransfer.enums.TransferStatus;
 import com.project.korex.transaction.entity.Transaction;
+import com.project.korex.transaction.enums.TransactionType;
 import com.project.korex.user.entity.Users;
 import jakarta.persistence.*;
 import lombok.*;
@@ -34,7 +35,7 @@ public class ForeignTransferTransaction {
     @JoinColumn(name = "user_id")
     private Users user;
 
-    @OneToOne(mappedBy = "foreignTransferTransaction", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(mappedBy = "foreignTransferTransaction", cascade = CascadeType.ALL)
     private Sender sender;
 
     @OneToOne(mappedBy = "foreignTransferTransaction", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -76,6 +77,9 @@ public class ForeignTransferTransaction {
     @Column(name = "transfer_status")
     private TransferStatus transferStatus;
 
+    @Enumerated(EnumType.STRING)
+    private TransactionType transactionType;
+
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -88,13 +92,6 @@ public class ForeignTransferTransaction {
         this.sender = sender;
         if (sender.getForeignTransferTransaction() != this) {
             sender.setForeignTransferTransaction(this);
-        }
-    }
-
-    public void setTermsAgreement(TermsAgreement agreement) {
-        this.termsAgreement = agreement;
-        if (agreement.getForeignTransferTransaction() != this) {
-            agreement.setForeignTransferTransaction(this);
         }
     }
 }

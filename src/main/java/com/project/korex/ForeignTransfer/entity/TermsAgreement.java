@@ -1,8 +1,7 @@
 package com.project.korex.ForeignTransfer.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -10,6 +9,9 @@ import java.time.LocalDateTime;
 @Table(name = "ForeignTransferTermsAgreement")
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class TermsAgreement {
 
     @Id
@@ -29,9 +31,6 @@ public class TermsAgreement {
 
     @Column(name = "agree3")
     private Boolean agree3; // 해외 송금 이용약관
-
-    @Column(name = "agreed")
-    private Boolean agreed; // 필수 동의 여부
 
     @Column(name = "agreed_at")
     private LocalDateTime agreedAt;

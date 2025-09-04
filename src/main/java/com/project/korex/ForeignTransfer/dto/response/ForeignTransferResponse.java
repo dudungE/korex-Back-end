@@ -1,28 +1,30 @@
 package com.project.korex.ForeignTransfer.dto.response;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Data
 @Builder
-public class SenderTransferResponse {
+public class ForeignTransferResponse {
+
     private Long transferId;
     private Long senderId;
     private String accountType;
-    private BigDecimal availableBalance;
     private BigDecimal transferAmount;
-    private String withdrawalMethod;  // 요청 그대로 반환
+    private BigDecimal convertedAmount;
+    private BigDecimal appliedRate;
+    private BigDecimal feeAmount;       // 추가
+    private BigDecimal feePercentage;   // 추가
+    private String withdrawalMethod;
     private String transferReason;
     private String relationRecipient;
     private String requestStatus;
     private String transferStatus;
     private LocalDateTime createdAt;
-    private BigDecimal convertedAmount;
-    private BigDecimal appliedRate;
-}
 
+    private boolean termsAgreed;
+    private LocalDateTime agreedAt;
+}

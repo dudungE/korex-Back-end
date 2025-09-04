@@ -20,8 +20,8 @@ public class Sender {
     @Column(name = "sender_id")
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "transfer_id")
+    @OneToOne
+    @JoinColumn(name = "transfer_id") // 외래 키 컬럼명
     private ForeignTransferTransaction foreignTransferTransaction;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -49,9 +49,6 @@ public class Sender {
     @Column(name = "eng_address")
     private String engAddress;
 
-    @Column(name = "staff_message")
-    private String staffMessage;
-
     @Column(name = "relation_recipient")
     private String relationRecipient;
 
@@ -69,15 +66,6 @@ public class Sender {
 
     @Column(name = "account_number")
     private String accountNumber;
-
-    @Column(name = "available_balance", precision = 18, scale = 4)
-    private BigDecimal availableBalance;
-
-    @Column(name = "transfer_amount", precision = 18, scale = 4)
-    private BigDecimal transferAmount;
-
-    @Column(name = "withdrawal_method")
-    private String withdrawalMethod;
 
     // 편의 메서드: ForeignTransferTransaction과 양방향 설정
     public void setForeignTransferTransaction(ForeignTransferTransaction transaction) {

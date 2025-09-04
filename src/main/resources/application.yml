@@ -4,7 +4,7 @@ server:
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/postgres
+    url: jdbc:postgresql://localhost:5432/postgre
     username: ${username}
     password: ${dbpassword}
   data:
@@ -67,4 +67,5 @@ naver:
     secret: ${YOUR_CLIENT_SECRET}
 
 file:
-  upload-dir: C:/project/uploads
+  upload-dir: C:/korex/uploads
+

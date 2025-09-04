@@ -4,6 +4,7 @@ import com.project.korex.ForeignTransfer.entity.FileUpload;
 import com.project.korex.ForeignTransfer.entity.ForeignTransferTransaction;
 import com.project.korex.ForeignTransfer.repository.FileUploadRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,45 +20,57 @@ import java.util.UUID;
 public class FileUploadService {
 
     private final FileUploadRepository fileUploadRepository;
-    private final String uploadDir = "uploads/"; // 서버 내 저장 경로
 
-    // 단순 파일 업로드 (서버 저장 파일명 반환)
+    @Value("${file.upload-dir}")  // yml에서 경로 읽어오기
+    private String uploadDir;
+
+    /**
+     * 단순 파일 업로드 (서버 저장 파일명 반환)
+     */
     public String uploadFile(MultipartFile file) {
-        if (file.isEmpty()) return null;
+        if (file == null || file.isEmpty()) return null;
 
         try {
+            // 원본 파일 확장자
             String originalFilename = file.getOriginalFilename();
             String extension = "";
             if (originalFilename != null && originalFilename.contains(".")) {
                 extension = originalFilename.substring(originalFilename.lastIndexOf("."));
             }
+
+            // 서버에 저장할 파일명
             String storedFilename = UUID.randomUUID() + extension;
 
+            // 업로드 경로 확인 및 생성
             Path uploadPath = Paths.get(uploadDir);
             if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
+                Files.createDirectories(uploadPath);  // 없으면 폴더 생성
             }
 
+            // 실제 파일 저장
             Path filePath = uploadPath.resolve(storedFilename);
             file.transferTo(filePath.toFile());
 
-            return storedFilename; // 서버 저장용 파일명 반환
+            return storedFilename;
+
         } catch (IOException e) {
             throw new RuntimeException("파일 업로드 실패: " + e.getMessage(), e);
         }
     }
 
-    // ForeignTransferTransaction에 연결 후 FileUpload 저장
+    /**
+     * ForeignTransferTransaction에 연결 후 FileUpload 저장
+     */
     public FileUpload uploadFileToTransaction(ForeignTransferTransaction transaction, MultipartFile file, String fileType) {
         if (file == null || file.isEmpty()) return null;
 
-        String storedFilename = uploadFile(file); // 실제 저장 파일명
-        String url = "/uploads/" + storedFilename;  // 웹 접근용 URL
+        String storedFilename = uploadFile(file);  // 실제 저장 파일명
+        String url = "/uploads/" + storedFilename; // 웹 접근용 URL
 
         FileUpload fu = new FileUpload();
         fu.setForeignTransferTransaction(transaction);
         fu.setOriginalFilename(file.getOriginalFilename());
-        fu.setStoredFilename(storedFilename); // 서버에 실제 저장된 파일명 사용
+        fu.setStoredFilename(storedFilename);
         fu.setFileUrl(url);
         fu.setFileType(fileType);
         fu.setFileSize(file.getSize());
