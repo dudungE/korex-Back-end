@@ -111,7 +111,7 @@ public class BalanceService {
         List<Balance> balances = balanceRepository.findByUserId(userId);
 
         // 기본 환전 통화 목록
-        String[] exchangeCurrencies = {"KRW", "USD", "JPY", "EUR"};
+        String[] exchangeCurrencies = {"KRW", "USD", "JPY", "EUR", "CNY", "GBP","AUD", "CAD", "CHF"};
 
         // 기존 잔액을 Map으로 변환 (code를 키로 사용)
         Map<String, BalanceResponseDto> balanceMap = balances.stream()

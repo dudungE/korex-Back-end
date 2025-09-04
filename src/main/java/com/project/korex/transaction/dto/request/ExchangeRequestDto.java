@@ -16,11 +16,11 @@ import java.math.BigDecimal;
 @Valid
 public class ExchangeRequestDto {
     @NotBlank(message = "출금 통화는 필수입니다")
-    @Pattern(regexp = "^(KRW|USD|JPY|EUR|CNY)$", message = "지원되지 않는 통화입니다")
+    @Pattern(regexp = "^(KRW|USD|JPY|EUR|CNY|GBP|AUD|CAD|CHF)$", message = "지원되지 않는 통화입니다")
     private String fromCurrency;
 
     @NotBlank(message = "입금 통화는 필수입니다")
-    @Pattern(regexp = "^(KRW|USD|JPY|EUR|CNY)$", message = "지원되지 않는 통화입니다")
+    @Pattern(regexp = "^(KRW|USD|JPY|EUR|CNY|GBP|AUD|CAD|CHF)$", message = "지원되지 않는 통화입니다")
     private String toCurrency;
 
     @NotNull(message = "환전 금액은 필수입니다")
