@@ -67,7 +67,7 @@ public class ForeignTransferService {
                 .orElseThrow(() -> new RuntimeException("원화 계좌가 없습니다."));
 
         Balance targetBalance = null;
-        BigDecimal convertedAmount = transferAmount;
+        BigDecimal convertedAmount = transferAmount; // 환전금액 = 송금액 기준
         BigDecimal appliedRate = BigDecimal.ONE;
         BigDecimal feePercentage = new BigDecimal("0.01"); // 1%
         BigDecimal feeAmount = transferAmount.multiply(feePercentage).setScale(0, RoundingMode.HALF_UP);
@@ -79,7 +79,7 @@ public class ForeignTransferService {
             // 환율 시뮬레이션 (수수료 제외)
             ExchangeSimulationDto simulation = exchangeService.simulateExchange("KRW", request.getCurrencyCode(), transferAmount);
             appliedRate = simulation.getExchangeRate();
-            convertedAmount = simulation.getToAmount().setScale(4, RoundingMode.HALF_UP);
+            convertedAmount = simulation.getToAmount().setScale(2, RoundingMode.HALF_UP); // 소수점 2자리
 
             // 원화 계좌 출금: 송금액 + 수수료
             BigDecimal totalKRWDeduct = transferAmount.add(feeAmount);
@@ -89,7 +89,7 @@ public class ForeignTransferService {
             krwBalance.setAvailableAmount(krwBalance.getAvailableAmount().subtract(totalKRWDeduct));
             krwBalance.setHeldAmount(krwBalance.getHeldAmount().add(totalKRWDeduct));
 
-            // 외화 계좌 hold: 환전금액만
+            // 외화 계좌 hold: 환전금액만 (수수료 제외)
             if (targetBalance.getAvailableAmount().compareTo(convertedAmount) < 0) {
                 throw new RuntimeException(request.getCurrencyCode() + " 잔액 부족");
             }
