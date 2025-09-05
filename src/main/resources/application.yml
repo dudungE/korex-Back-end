@@ -33,6 +33,10 @@ spring:
         password: ${MAIL_PASSWORD}
         ssl:
           enable: false
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 30MB
 
 
 
@@ -65,3 +69,6 @@ naver:
   client:
     id: ${YOUR_CLIENT_ID}
     secret: ${YOUR_CLIENT_SECRET}
+
+file:
+  upload-dir: C:/korex/uploads
