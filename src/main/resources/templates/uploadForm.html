@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>OCR 업로드</title>
+</head>
+<body>
+<h3>사진 업로드 / 촬영</h3>
+<form id="uploadForm">
+    <input type="file" accept="image/*" capture="environment" id="fileInput"/>
+    <button type="button" onclick="uploadFile()">업로드</button>
+</form>
+<div id="result"></div>
+
+<script>
+    async function uploadFile() {
+      const input = document.getElementById('fileInput');
+      if (input.files.length === 0) return alert('파일 선택');
+
+      const formData = new FormData();
+      formData.append('file', input.files[0]);
+
+      const res = await fetch('/api/ocr/upload-analyze', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      document.getElementById('result').innerText = JSON.stringify(data, null, 2);
+    }
+</script>
+</body>
+</html>

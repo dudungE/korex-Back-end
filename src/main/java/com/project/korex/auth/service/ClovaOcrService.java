@@ -29,58 +29,28 @@ public class ClovaOcrService {
 
     public static String execute(ImageParsingRequest request) {
         try {
-            StopWatch totalTime = new StopWatch();
-            totalTime.start();
-
-            // ----------- 요청 전송 ---------------------
-            StopWatch requestStopWatch = new StopWatch();
-            requestStopWatch.start();
-
             URL url = new URL(API_URL);
             HttpURLConnection connection = createRequestHeader(url);
             createRequestBody(connection, request);
 
-            requestStopWatch.stop();
-            System.out.println("request 생성 시간 : " + requestStopWatch.getTotalTimeMillis() + "ms");
-
-            // ----------- 응답 수신 ---------------------
-            StopWatch responseStopWatch = new StopWatch();
-            responseStopWatch.start();
-
             StringBuilder response = getResponseData(connection);
-
-            responseStopWatch.stop();
-            System.out.println("응답 수신 시간 : " + responseStopWatch.getTotalTimeMillis() + "ms");
-
-            // ----------- 데이터 파싱 ---------------------
-            StopWatch parsingStopWatch = new StopWatch();
-            parsingStopWatch.start();
-
-            StringBuilder result = parseResponseData(response);
-
-            parsingStopWatch.stop();
-            System.out.println("data parsing 시간 : " + parsingStopWatch.getTotalTimeMillis() + "ms");
-
-            totalTime.stop();
-            System.out.println("Total Time = " + totalTime.getTotalTimeMillis() + "ms");
-            return result.toString();
+            return parseResponseData(response).toString();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        catch (Exception exception) {
-            exception.printStackTrace();
-        }
-
         return null;
     }
 
     public OcrData parseOcrResult(String ocrResult) {
         OcrData data = new OcrData();
+        if (ocrResult == null) return data;
 
+        // 이름
         Pattern namePattern = Pattern.compile("주민등록[증중]\\s*([가-힣]{2,4})");
         Matcher nameMatcher = namePattern.matcher(ocrResult);
-        if(nameMatcher.find()) {
-            data.setName(nameMatcher.group(1));
-        }
+        if(nameMatcher.find()) data.setName(nameMatcher.group(1));
 
+        // RRN / 생년월일
         Pattern rrnPattern = Pattern.compile("(\\d{6}-\\d{7})");
         Matcher rrnMatcher = rrnPattern.matcher(ocrResult);
         if (rrnMatcher.find()) {
@@ -107,7 +77,10 @@ public class ClovaOcrService {
         JSONObject image = new JSONObject();
         image.put("format", "PNG");
         image.put("name", "requestImage");
-        image.put("url", request.url());
+
+        // URL 있으면 URL, 없으면 Base64
+        if (request.url() != null) image.put("url", request.url());
+        else image.put("data", request.base64Data());
 
         JSONArray images = new JSONArray();
         images.put(image);
@@ -121,52 +94,47 @@ public class ClovaOcrService {
         requestObject.put("images", images);
 
         connection.connect();
-        DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream());
-        outputStream.write(requestObject.toString().getBytes(StandardCharsets.UTF_8));
-        outputStream.flush();
-        outputStream.close();
+        try (DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream())) {
+            outputStream.write(requestObject.toString().getBytes(StandardCharsets.UTF_8));
+            outputStream.flush();
+        }
     }
 
     private static BufferedReader checkResponse(HttpURLConnection connection) throws IOException {
         int responseCode = connection.getResponseCode();
-        BufferedReader reader;
-
-        if (responseCode == 200) {
-            reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-        }
-        else {
-            reader = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
-        }
-        return reader;
+        if (responseCode == 200)
+            return new BufferedReader(new InputStreamReader(connection.getInputStream()));
+        else
+            return new BufferedReader(new InputStreamReader(connection.getErrorStream()));
     }
 
     private static StringBuilder getResponseData(HttpURLConnection connection) throws IOException {
         BufferedReader reader = checkResponse(connection);
         String line;
         StringBuilder response = new StringBuilder();
-        while ((line = reader.readLine()) != null) {
-            response.append(line);
-        }
+        while ((line = reader.readLine()) != null) response.append(line);
         reader.close();
         return response;
     }
 
     private static StringBuilder parseResponseData(StringBuilder response) throws ParseException {
-        JSONParser responseParser = new JSONParser(response.toString());
-        LinkedHashMap<String, String> hashMap = (LinkedHashMap<String, String>) responseParser.parse();
-        JSONObject parsed = new JSONObject(hashMap);
-        JSONArray parsedImages = (JSONArray) parsed.get("images");
+        JSONParser parser = new JSONParser(response.toString());
+        LinkedHashMap<String, Object> map = (LinkedHashMap<String, Object>) parser.parse();
+        JSONObject json = new JSONObject(map);
+
+        JSONArray parsedImages = (JSONArray) json.opt("images");
         StringBuilder result = new StringBuilder();
-
-        if (parsedImages != null) {
+        if (parsedImages != null && !parsedImages.isEmpty()) {
             JSONObject parsedImage = (JSONObject) parsedImages.get(0);
-            JSONArray parsedTexts = (JSONArray) parsedImage.get("fields");
-
-            for (int i = 0; i < parsedTexts.length(); i++) {
-                JSONObject current = (JSONObject) parsedTexts.get(i);
-                result.append((String) current.get("inferText")).append(" ");
+            JSONArray fields = (JSONArray) parsedImage.opt("fields");
+            if (fields != null) {
+                for (int i = 0; i < fields.length(); i++) {
+                    JSONObject field = (JSONObject) fields.get(i);
+                    result.append(field.optString("inferText", "")).append(" ");
+                }
             }
         }
         return result;
     }
+
 }
