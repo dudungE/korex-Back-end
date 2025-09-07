@@ -15,7 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @RestController
-@RequestMapping("/admin/files")
+@RequestMapping("/api/admin/files")
 @RequiredArgsConstructor
 public class FileAdminController {
 

@@ -18,6 +18,7 @@ public class ForeignTransferRequest {
     private String accountPassword;        // 계좌 비밀번호
     private String krwAccount;             // 출금 계좌
     private String foreignAccount;         // 수취인 계좌
+    private BigDecimal exchangeRate;
 
     // 2. 송금인 정보
     private String senderName;
@@ -46,4 +47,9 @@ public class ForeignTransferRequest {
     private BigDecimal totalAmountKRW;      // 원화 기준 총 금액
     private BigDecimal convertedAmount;     // 환전 금액
     private BigDecimal feeAmount;           // 수수료
+
+    private String recipientName;
+    private String recipientPhone;
+    private String recipientEmail;
+    private String recipientAddress;
 }

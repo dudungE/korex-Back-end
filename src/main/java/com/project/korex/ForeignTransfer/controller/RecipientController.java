@@ -19,7 +19,7 @@
     import java.util.List;
 
     @RestController
-    @RequestMapping("/api/ForeignTransfer/recipients")
+    @RequestMapping("/api/foreign-transfer/recipients")
     @RequiredArgsConstructor
     public class RecipientController {
 
