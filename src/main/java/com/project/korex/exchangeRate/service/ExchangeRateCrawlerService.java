@@ -1,0 +1,246 @@
+package com.project.korex.exchangeRate.service;
+
+import com.project.korex.alert.service.AlertService;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+
+@Service
+public class ExchangeRateCrawlerService {
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
+    @Autowired
+    private AlertService alertService;
+
+    private static final String REDIS_KEY = "exchange:realtime";
+    private static final String REDIS_KEY_PREFIX = "exchange:realtime:";
+
+    private static final String URL_REALTIME = "https://finance.naver.com/marketindex/exchangeList.naver";
+    private static final String URL_DAILY = "https://finance.naver.com/marketindex/exchangeDailyQuote.naver?marketindexCd=FX_%sKRW&page=%d";
+
+    // 30초마다 크롤링 후 각 통화별 Redis 리스트에 저장
+    @Scheduled(fixedRate = 600000)
+    public void scheduledCrawlAndCache() {
+        try {
+            // 네이버 금융 환율 데이터 크롤링
+            List<Map<String, String>> exchangeList = crawlRealtimeRate();
+
+            // REDIS_KEY에 시간제한 없이 저장 (스케줄러에 따라 30초마다 자동 업데이트)
+            redisTemplate.opsForValue().set(REDIS_KEY, exchangeList);
+
+            // 현재 시간 추가 - 실시간 추이 데이터 시간
+            String currentTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+
+            for (Map<String, String> rateData : exchangeList) {
+                String currencyCode = rateData.get("currency_code");
+                if (currencyCode != null && !currencyCode.isEmpty()) {
+                    // 시간 정보 추가
+                    rateData.put("crawl_time", currentTime);
+
+                    // 해당 key(통화 코드)에 Redis 저장
+                    saveRealtimeData(currencyCode, rateData);
+
+                    // 환율 업데이트 후 알림 체크 및 발송
+//                    triggerAlertsForCurrency(currencyCode, rateData);
+                }
+            }
+            System.out.println("crawling completed: " + currentTime + ", num of currency: " + exchangeList.size());
+
+        } catch (IOException e) {
+            System.err.println("환율 크롤링 실패: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 환율 업데이트 후 해당 통화의 알림 체크
+     */
+    private void triggerAlertsForCurrency(String currencyCode, Map<String, String> rateData) {
+        try {
+            String baseRateStr = rateData.get("base_rate");
+            if (baseRateStr != null && !baseRateStr.isEmpty()) {
+                // 쉼표 제거 후 숫자 변환
+                double currentRate = Double.parseDouble(baseRateStr.replaceAll(",", ""));
+
+                // 알림 서비스에서 해당 통화의 알림들 체크
+                alertService.checkAndSendAlerts(currencyCode, currentRate);
+            }
+        } catch (NumberFormatException e) {
+            System.err.println("환율 파싱 실패 - " + currencyCode + ": " + e.getMessage());
+        }
+    }
+
+
+    // 통화코드별 Redis 키 생성 및 데이터 저장 (최신 50개 유지)
+    public void saveRealtimeData(String currencyCode, Map<String, String> newData) {
+        String redisKey = REDIS_KEY_PREFIX + currencyCode;
+        redisTemplate.opsForList().leftPush(redisKey, newData);
+        redisTemplate.opsForList().trim(redisKey, 0, 50);  // trim 명령어로 최대 51개씩만 유지
+    }
+
+    /**
+     * 실시간 환율 데이터 크롤링
+     */
+    public List<Map<String, String>> crawlRealtimeRate() throws IOException {
+
+        Document doc = Jsoup.connect(URL_REALTIME).userAgent("Mozilla/5.0").get();
+
+        Elements rows = doc.select("table.tbl_exchange > tbody > tr");
+
+        // JSON 배열로 만들기 위해 List<Map<String, String>>
+        List<Map<String, String>> exchangeList = new ArrayList<>();
+
+        // 컬럼명 정의
+        String[] fieldNames = {
+                "base_rate",     // 기준 환율
+                "buy_cash_rate",      // 현찰 살 때
+                "sell_cash_rate",     // 현찰 팔 때
+                "send_rate",         // 송금 보낼 때
+                "receive_rate",      // 송금 받을 때
+                "usd_conversion_rate"  // 미화환산율
+        };
+
+        for (Element row : rows) {
+            // 통화코드 추출
+            String fullText = row.select("td.tit").text().trim();
+            String currencyCode = fullText.replaceAll("[^A-Za-z]", "");
+
+            Elements tds = row.select("td"); // 모든 td 요소
+
+            Map<String, String> rateData = new LinkedHashMap<>();
+            rateData.put("currency_code", currencyCode);
+
+            for (int i = 1; i <= 6; i++) {
+                String key = fieldNames[i - 1];
+                String value = tds.get(i).text().trim();
+                rateData.put(key, value);
+            }
+            exchangeList.add(rateData);
+        } // end for
+        return exchangeList;
+    }
+
+    /**
+     * Redis에서 환율정보 직접 조회
+     */
+    // 전체 통화 코드 실시간 조회
+    public List<Map<String, String>> getRealtimeRateFromCache() {
+        return (List<Map<String, String>>) redisTemplate.opsForValue().get(REDIS_KEY);
+    }
+
+    // 특정 통화코드별로 최신 50개 환율 데이터 조회
+    @SuppressWarnings("unchecked")
+    public List<Map<String, String>> getRealtimeCurrencyRateFromCache(String currencyCode) {
+        String redisKey = REDIS_KEY_PREFIX + currencyCode;
+        List<Object> cachedList = redisTemplate.opsForList().range(redisKey, 0, 50);
+
+        if (cachedList == null) return Collections.emptyList();
+
+        List<Map<String, String>> result = new ArrayList<>();
+        for (Object obj : cachedList) {
+            if (obj instanceof Map) {
+                result.add((Map<String, String>) obj);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 메인페이지용 - 여러 통화의 최신 데이터 조회
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Map<String, String>> getMainPageRatesData(String[] currencyCodes) {
+        Map<String, Map<String, String>> result = new LinkedHashMap<>();
+
+        for (String currencyCode : currencyCodes) {
+            String redisKey = REDIS_KEY_PREFIX + currencyCode;
+            Object cachedData = redisTemplate.opsForList().index(redisKey, 0); // 최신 1개만
+
+            if (cachedData instanceof Map) {
+                result.put(currencyCode, (Map<String, String>) cachedData);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * 과거 데이터 크롤링
+     * page기반으로 가져옴(10개씩)
+     */
+    public List<Map<String, String>> crawlDailyRate(String currencyCode, int page) throws IOException {
+
+        String url = String.format(URL_DAILY, currencyCode, page);
+        Document doc = Jsoup.connect(url).userAgent("Mozilla/5.0").get();
+
+        Elements rows = doc.select("table.tbl_exchange > tbody > tr");
+        System.out.println("jjh" + rows);
+
+        // JSON 배열로 만들기 위해 List<Map<String, String>>
+        List<Map<String, String>> exchangeList = new ArrayList<>();
+
+        // 컬럼명 정의
+        String[] fieldNames = {
+                "base_date", // 날짜
+                "base_rate",     // 매매 기준율
+                "change_direction", // 전일대비 방향
+                "change_amount",    // 전일대비 변화량
+                "buy_cash_rate",      // 현찰 살 때
+                "sell_cash_rate",     // 현찰 팔 때
+                "send_rate",         // 송금 보낼 때
+                "receive_rate",      // 송금 받을 때
+        };
+
+        for (Element row : rows) {
+            Elements tds = row.select("td");
+            // td 개수 체크 등 방어코드는 생략(필요가 있으면 추가)
+            if (tds.size() < 7) continue; // 최소 td 개수 확인
+
+            Map<String, String> rateData = new LinkedHashMap<>();
+
+            // 0: base_date
+            rateData.put(fieldNames[0], tds.get(0).text().trim());
+
+            // 1: base_rate
+            rateData.put(fieldNames[1], tds.get(1).text().trim());
+
+            // 2: changeDirection / changeAmount
+            Element diffTd = tds.get(2);
+            String changeDirection = "";
+            Element img = diffTd.selectFirst("img");
+            if (img != null) {
+                String alt = img.attr("alt"); // "상승" or "하락" 등
+                changeDirection = alt;
+            }
+            rateData.put(fieldNames[2], changeDirection);
+
+            // 전일대비 변화량은 숫자 부분의 텍스트만 추출
+            String changeAmount = diffTd.ownText().trim();
+            rateData.put(fieldNames[3], changeAmount);
+
+            // 3~6: buy/sell/send/receive
+            for (int i = 3; i <= 6; i++) {
+                rateData.put(fieldNames[i + 1], tds.get(i).text().trim()); // i+1 : fieldNames 순서 맞추기
+            }
+
+            exchangeList.add(rateData);
+        }
+
+        System.out.println(exchangeList);
+
+        return exchangeList;
+    }
+
+}
+
