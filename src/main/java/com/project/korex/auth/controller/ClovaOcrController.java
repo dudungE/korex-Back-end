@@ -34,11 +34,6 @@ public class ClovaOcrController {
     private final ClovaOcrService clovaOcrService;
     private final Path uploadDir = Paths.get("uploads");
 
-    @GetMapping("/upload-analyze")
-    public String uploadAnalyzePage() {
-        return "uploadForm"; // src/main/resources/templates/uploadForm.html
-    }
-
     @Operation(summary = "OCR 이미지 업로드 및 분석")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "성공"),
